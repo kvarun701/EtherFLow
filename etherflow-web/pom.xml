@@ -1,0 +1,23 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.etherflow</groupId>
+        <artifactId>etherflow-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>etherflow-web</artifactId>
+    <name>EtherFlow :: Web</name>
+    <description>DispatcherHandler, HandlerMapping, HandlerAdapter, RouterFunction, annotations</description>
+    <dependencies>
+        <dependency>
+            <groupId>io.etherflow</groupId>
+            <artifactId>etherflow-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+        </dependency>
+    </dependencies>
+</project>
