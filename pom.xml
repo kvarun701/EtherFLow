@@ -10,6 +10,27 @@
 
     <name>EtherFlow</name>
     <description>Reactive web framework for Java</description>
+    <url>https://github.com/kvarun701/EtherFLow</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/kvarun701/EtherFLow</url>
+        <connection>scm:git:https://github.com/kvarun701/EtherFLow.git</connection>
+        <developerConnection>scm:git:git@github.com:kvarun701/EtherFLow.git</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>kvarun701</name>
+            <url>https://github.com/kvarun701</url>
+        </developer>
+    </developers>
 
     <modules>
         <module>etherflow-streams</module>
@@ -86,12 +107,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-<repositories>
-    <repository>
-        <id>local</id>
-        <url>file://${user.home}/.m2/repository</url>
-    </repository>
-</repositories>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/kvarun701/EtherFLow</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -109,6 +132,28 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals><goal>jar-no-fork</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.11.2</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals><goal>jar</goal></goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
