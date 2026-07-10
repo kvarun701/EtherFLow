@@ -1,15 +1,13 @@
 package io.etherflow.sample;
 
 import io.etherflow.core.Mono;
-import io.etherflow.http.*;
+import io.etherflow.server.netty.NettyServer;
 import io.etherflow.web.DispatcherHandler;
 import io.etherflow.web.function.*;
 
-public class SampleApp implements HttpHandler {
+public class SampleApp {
 
-    private final DispatcherHandler handler = new DispatcherHandler();
-
-    public SampleApp() {
+    public static void main(String[] args) throws Exception {
         RouterFunction routes = RouterFunction.route()
                 .GET("/hello", req -> Mono.just(ServerResponse.ok("Hello EtherFlow!")))
                 .GET("/users/{id}", req -> {
@@ -21,20 +19,18 @@ public class SampleApp implements HttpHandler {
                                 .flatMap(body -> Mono.just(ServerResponse.ok(body))))
                 .build();
 
-        handler.addHandlerMapping(new RouterFunctionMapping(routes));
-        handler.addHandlerAdapter(new RouterFunctionMapping(routes));
-    }
+        DispatcherHandler dispatcher = new DispatcherHandler();
+        dispatcher.addHandlerMapping(new RouterFunctionMapping(routes));
+        dispatcher.addHandlerAdapter(new RouterFunctionMapping(routes));
 
-    @Override
-    public Mono<Void> handle(ServerWebExchange exchange) {
-        return handler.handle(exchange);
-    }
-
-    public static void main(String[] args) {
-        System.out.println("EtherFlow sample app ready");
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
+        NettyServer server = new NettyServer(port, dispatcher);
+        server.start();
+        System.out.println("EtherFlow sample app running on http://localhost:" + port);
         System.out.println("Endpoints:");
         System.out.println("  GET  /hello");
         System.out.println("  GET  /users/{id}");
         System.out.println("  POST /echo");
+        server.await();
     }
 }

@@ -53,21 +53,16 @@ public class DispatcherHandler implements HttpHandler {
     }
 
     private Mono<Void> handleInternal(ServerWebExchange exchange) {
-        return findHandlerAdapter(exchange)
-                .flatMap(adapter -> adapter.handle(exchange, exchange.request()))
-                .then();
-    }
-
-    private Mono<HandlerAdapter> findHandlerAdapter(ServerWebExchange exchange) {
         return findHandler(exchange)
                 .flatMap(handler -> {
                     for (HandlerAdapter adapter : handlerAdapters) {
                         if (adapter.supports(handler)) {
-                            return Mono.just(adapter);
+                            return adapter.handle(exchange, handler);
                         }
                     }
                     return Mono.error(new IllegalStateException("No HandlerAdapter for handler: " + handler));
-                });
+                })
+                .then();
     }
 
     private Mono<Object> findHandler(ServerWebExchange exchange) {

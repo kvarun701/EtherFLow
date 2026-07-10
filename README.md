@@ -88,43 +88,7 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 
 ## Quick Start
 
-### 1. Add the dependency
-
-**Via GitHub Packages** (once Actions publishes — push to `main` to trigger):
-
-```xml
-<repositories>
-    <repository>
-        <id>github</id>
-        <url>https://maven.pkg.github.com/kvarun701/EtherFLow</url>
-    </repository>
-</repositories>
-
-<dependency>
-    <groupId>io.etherflow</groupId>
-    <artifactId>etherflow-starter-webflux</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-    <type>pom</type>
-</dependency>
-```
-
-Note: GitHub Packages requires authentication even for public repos. Add a file `~/.m2/settings.xml`:
-
-```xml
-<settings>
-    <servers>
-        <server>
-            <id>github</id>
-            <username>kvarun701</username>
-            <password>${env.GITHUB_TOKEN}</password>
-        </server>
-    </servers>
-</settings>
-```
-
-Then set `GITHUB_TOKEN` to a [classic PAT](https://github.com/settings/tokens) with `read:packages` scope.
-
-**Or build from source** (no auth needed):
+### Build from source
 
 ```bash
 git clone https://github.com/kvarun701/EtherFLow.git
@@ -132,113 +96,48 @@ cd EtherFlow
 mvn install -DskipTests
 ```
 
-Then add:
+### Add the dependency
 
 ```xml
 <dependency>
     <groupId>io.etherflow</groupId>
     <artifactId>etherflow-starter-webflux</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <type>pom</type>
 </dependency>
 ```
 
-### 2. Create a handler
+### Run the sample
+
+```bash
+mvn exec:java -pl etherflow-sample
+# Or build and run:
+mvn package -pl etherflow-sample -DskipTests
+java -jar etherflow-sample/target/etherflow-sample-0.1.0.jar
+```
+
+### Hello World in 30 seconds
 
 ```java
 import io.etherflow.core.Mono;
+import io.etherflow.server.netty.NettyServer;
+import io.etherflow.web.DispatcherHandler;
 import io.etherflow.web.function.*;
 
-public class UserHandler {
-
-    public Mono<ServerResponse> getUser(ServerRequest request) {
-        String id = request.pathVariable("id");
-        return Mono.just(ServerResponse.ok("{\"id\":\"" + id + "\",\"name\":\"Alice\"}"));
-    }
-
-    public Mono<ServerResponse> listUsers(ServerRequest request) {
-        return Mono.just(ServerResponse.ok("[{\"id\":\"1\",\"name\":\"Alice\"}]"));
-    }
-
-    public Mono<ServerResponse> createUser(ServerRequest request) {
-        return request.bodyTo(String.class)
-                .flatMap(body -> Mono.just(ServerResponse.created()));
-    }
-}
-```
-
-### 3. Define routes
-
-```java
-import io.etherflow.web.function.*;
-import static io.etherflow.web.function.RequestPredicate.*;
-
-UserHandler handler = new UserHandler();
-
-RouterFunction routes = RouterFunction.route()
-        .GET("/users/{id}", handler::getUser)
-        .GET("/users", handler::listUsers)
-        .POST("/users", handler::createUser)
-        .build();
-```
-
-### 4. Wire it up
-
-```java
-import io.etherflow.http.*;
-import io.etherflow.web.*;
-
-DispatcherHandler dispatcher = new DispatcherHandler();
-RouterFunctionMapping mapping = new RouterFunctionMapping(routes);
-
-dispatcher.addHandlerMapping(mapping);
-dispatcher.addHandlerAdapter(mapping);
-
-// Use with any HttpHandler consumer (Netty adapter, test harness, etc.)
-HttpHandler app = dispatcher;
-```
-
-### 5. Full sample
-
-```java
-package com.example;
-
-import io.etherflow.core.Mono;
-import io.etherflow.http.*;
-import io.etherflow.web.*;
-import io.etherflow.web.function.*;
-
-public class App implements HttpHandler {
-
-    private final DispatcherHandler handler = new DispatcherHandler();
-
-    public App() {
+public class App {
+    public static void main(String[] args) throws Exception {
         RouterFunction routes = RouterFunction.route()
                 .GET("/hello", req -> Mono.just(ServerResponse.ok("Hello EtherFlow!")))
-                .GET("/users/{id}", req -> {
-                    String id = req.pathVariable("id");
-                    return Mono.just(ServerResponse.ok("{\"id\":\"" + id + "\"}"));
-                })
-                .POST("/echo", req ->
-                        req.bodyTo(String.class)
-                                .flatMap(body -> Mono.just(ServerResponse.ok(body))))
                 .build();
 
-        RouterFunctionMapping mapping = new RouterFunctionMapping(routes);
-        handler.addHandlerMapping(mapping);
-        handler.addHandlerAdapter(mapping);
-    }
+        DispatcherHandler dispatcher = new DispatcherHandler();
+        dispatcher.addHandlerMapping(new RouterFunctionMapping(routes));
+        dispatcher.addHandlerAdapter(new RouterFunctionMapping(routes));
 
-    @Override
-    public Mono<Void> handle(ServerWebExchange exchange) {
-        return handler.handle(exchange);
-    }
-
-    public static void main(String[] args) {
-        System.out.println("App ready — endpoints:");
-        System.out.println("  GET  /hello");
-        System.out.println("  GET  /users/{id}");
-        System.out.println("  POST /echo");
+        NettyServer server = new NettyServer(8080, dispatcher);
+        server.start();
+        System.out.println("Server running on http://localhost:8080");
+        server.await();
     }
 }
 ```
