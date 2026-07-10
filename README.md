@@ -90,11 +90,13 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 
 ### 1. Add the dependency
 
+**Via GitHub Packages** (once Actions publishes — push to `main` to trigger):
+
 ```xml
 <repositories>
     <repository>
-        <id>etherflow-snapshots</id>
-        <url>https://github.com/kvarun701/EtherFlow/raw/main/maven-repo</url>
+        <id>github</id>
+        <url>https://maven.pkg.github.com/kvarun701/EtherFLow</url>
     </repository>
 </repositories>
 
@@ -106,10 +108,26 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 </dependency>
 ```
 
-Or clone and build locally:
+Note: GitHub Packages requires authentication even for public repos. Add a file `~/.m2/settings.xml`:
+
+```xml
+<settings>
+    <servers>
+        <server>
+            <id>github</id>
+            <username>kvarun701</username>
+            <password>${env.GITHUB_TOKEN}</password>
+        </server>
+    </servers>
+</settings>
+```
+
+Then set `GITHUB_TOKEN` to a [classic PAT](https://github.com/settings/tokens) with `read:packages` scope.
+
+**Or build from source** (no auth needed):
 
 ```bash
-git clone https://github.com/kvarun701/EtherFlow.git
+git clone https://github.com/kvarun701/EtherFLow.git
 cd EtherFlow
 mvn install -DskipTests
 ```
