@@ -40,7 +40,10 @@
         <module>etherflow-web</module>
         <module>etherflow-server-netty</module>
         <module>etherflow-starter-webflux</module>
+        <module>etherflow-spring-boot-autoconfigure</module>
+        <module>etherflow-spring-boot-starter</module>
         <module>etherflow-sample</module>
+        <module>etherflow-sample-spring-boot</module>
     </modules>
 
     <properties>
@@ -50,6 +53,7 @@
         <junit.version>5.11.4</junit.version>
         <jackson.version>2.18.2</jackson.version>
         <netty.version>4.1.117.Final</netty.version>
+        <spring-boot.version>3.4.0</spring-boot.version>
     </properties>
 
     <dependencyManagement>
@@ -88,6 +92,7 @@
                 <groupId>io.etherflow</groupId>
                 <artifactId>etherflow-starter-webflux</artifactId>
                 <version>${project.version}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -104,6 +109,29 @@
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.etherflow</groupId>
+                <artifactId>etherflow-spring-boot-autoconfigure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.etherflow</groupId>
+                <artifactId>etherflow-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.etherflow</groupId>
+                <artifactId>etherflow-server-netty</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

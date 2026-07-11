@@ -1,0 +1,1 @@
+provides: etherflow-server-netty,etherflow-web,etherflow-spring-boot-autoconfigure

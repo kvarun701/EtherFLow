@@ -199,6 +199,49 @@ public class App {
 
 ---
 
+## Spring Boot Starter
+
+Use EtherFlow as your reactive web runtime inside Spring Boot — no Tomcat, no Spring MVC, just EtherFlow + Netty.
+
+### Add the dependency
+
+```xml
+<dependency>
+    <groupId>io.etherflow</groupId>
+    <artifactId>etherflow-spring-boot-starter</artifactId>
+    <version>0.1.0</version>
+    <type>pom</type>
+</dependency>
+```
+
+### Define `RouterFunction` beans
+
+```java
+@SpringBootApplication
+public class MyApp {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MyApp.class, args);
+    }
+
+    @Bean
+    public RouterFunction routes() {
+        return RouterFunction.route()
+                .GET("/hello", req -> Mono.just(ServerResponse.ok("Hello EtherFlow!")))
+                .build();
+    }
+}
+```
+
+### Configure
+
+```properties
+# application.properties
+etherflow.port=8080
+```
+
+EtherFlow auto-configuration collects all `RouterFunction` beans, wires them into a `DispatcherHandler`, and starts the Netty server — zero manual setup.
+
 ## Building from Source
 
 ```bash
