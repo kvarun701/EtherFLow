@@ -1,6 +1,6 @@
 plugins {
-    kotlin("multiplatform") version "2.1.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 group = "io.etherflow"
@@ -11,6 +11,14 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = "21"
         }
+    }
+
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    js(IR) {
+        browser()
     }
 
     sourceSets {
@@ -27,6 +35,24 @@ kotlin {
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
                 implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
             }
+        }
+
+        val iosMain by creating {
+            dependsOn(commonMain)
+        }
+
+        val iosX64Main by getting {
+            dependsOn(iosMain)
+        }
+        val iosArm64Main by getting {
+            dependsOn(iosMain)
+        }
+        val iosSimulatorArm64Main by getting {
+            dependsOn(iosMain)
+        }
+
+        val jsMain by getting {
+            dependsOn(commonMain)
         }
 
         val jvmTest by getting {

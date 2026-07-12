@@ -32,7 +32,9 @@ class HttpRequestBuilder internal constructor(
     }
 
     suspend inline fun <reified T> body(value: T): HttpResponse {
-        headers.putIfAbsent("Content-Type", "application/json")
+        if (!headers.containsKey("Content-Type")) {
+            headers["Content-Type"] = "application/json"
+        }
         val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         bodyBytes = json.encodeToString(serializer<T>(), value).encodeToByteArray()
         return body()

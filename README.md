@@ -780,15 +780,6 @@ client.delete("/users/{id}", 1).body()
 ### Headers, auth, content-type
 
 ```kotlin
-val admin = client.get("/admin/users") {
-    header("Authorization", "Bearer $token")
-    header("X-Request-ID", uuid)
-}.bodyAs<List<User>>()
-```
-
-Wait — the builder pattern above uses trailing lambda. Let me use the builder methods:
-
-```kotlin
 val admin: List<User> = client.get("/admin/users")
     .bearerAuth(token)
     .header("X-Request-ID", uuid)
@@ -820,13 +811,13 @@ class UserViewModel : ViewModel() {
 }
 ```
 
-### KMP targets
+### KMP targets (all ship in `etherflow-client-kmp`)
 
 | Target | Status | Engine |
 |--------|--------|--------|
-| JVM / Android | ✅ Works | OkHttp |
-| iOS | 🚧 Planned | NSURLSession |
-| JS / Wasm | 🚧 Planned | Ktor CIO |
+| JVM / Android | ✅ Done | OkHttp |
+| iOS (x64, arm64, simulator) | ✅ Done | NSURLSession |
+| JS (IR browser) | ✅ Done | `window.fetch` |
 
 ---
 
