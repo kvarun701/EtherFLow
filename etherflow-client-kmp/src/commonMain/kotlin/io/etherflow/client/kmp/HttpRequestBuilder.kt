@@ -25,6 +25,12 @@ class HttpRequestBuilder internal constructor(
         headers["Content-Type"] = type
     }
 
+    fun multipart(block: MultipartBuilder.() -> Unit): HttpRequestBuilder = apply {
+        val multipart = MultipartBuilder().apply(block).build()
+        contentType(multipart.contentType)
+        bodyBytes = multipart.toByteArray()
+    }
+
     suspend fun body(): HttpResponse {
         val fullUrl = resolveUrl()
         val request = HttpRequest(method, fullUrl, headers.toMap(), bodyBytes)

@@ -786,6 +786,18 @@ val admin: List<User> = client.get("/admin/users")
     .bodyAs<List<User>>()
 ```
 
+### Multipart upload
+
+```kotlin
+client.post("/upload")
+    .multipart {
+        field("user", "bob")
+        field("description", "my profile photo")
+        file("avatar", "photo.jpg", bytes, "image/jpeg")
+    }
+    .body()
+```
+
 ### Android ViewModel with KMP client
 
 ```kotlin

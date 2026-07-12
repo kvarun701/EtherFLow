@@ -35,4 +35,53 @@ class HttpClientTest {
         assertNotNull(post.title)
         assertTrue(post.id == 1)
     }
+
+    @Test
+    fun `MultipartBody produces correct boundary header`() {
+        val body = MultipartBuilder()
+            .field("name", "Alice")
+            .build()
+
+        assertTrue(body.contentType.startsWith("multipart/form-data; boundary="))
+        assertTrue(body.boundary.isNotEmpty())
+    }
+
+    @Test
+    fun `multipart DSL sets correct headers and body on request builder`() {
+        val client = httpClient { baseUrl = "http://localhost" }
+        client.install(platformEngine())
+        val builder = client.post("/test")
+            .multipart {
+                field("user", "alice")
+                file("doc", "file.txt", "content".encodeToByteArray())
+            }
+
+        val ct = builder.headers["Content-Type"] ?: ""
+        assertTrue(ct.startsWith("multipart/form-data; boundary="))
+        assertNotNull(builder.bodyBytes)
+        val body = builder.bodyBytes!!.decodeToString()
+        assertTrue(body.contains("alice"))
+        assertTrue(body.contains("file.txt"))
+    }
+
+    @Test
+    fun `MultipartBody encodes fields and files`() {
+        val fileData = "image-data".encodeToByteArray()
+        val body = MultipartBuilder()
+            .field("user", "bob")
+            .field("action", "upload")
+            .file("avatar", "photo.jpg", fileData, "image/jpeg")
+            .build()
+
+        val bytes = body.toByteArray()
+        val bodyStr = bytes.decodeToString()
+
+        assertTrue(bodyStr.contains("Content-Disposition: form-data; name=\"user\""))
+        assertTrue(bodyStr.contains("Content-Disposition: form-data; name=\"action\""))
+        assertTrue(bodyStr.contains("Content-Disposition: form-data; name=\"avatar\"; filename=\"photo.jpg\""))
+        assertTrue(bodyStr.contains("Content-Type: image/jpeg"))
+        assertTrue(bodyStr.contains("image-data"))
+        assertTrue(bodyStr.contains("--${body.boundary}--"))
+    }
+
 }
