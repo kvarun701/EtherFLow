@@ -58,15 +58,17 @@ public class App {
 }
 ```
 
-## Comparison with Spring WebFlux
+## Comparison Guide
 
-| Aspect | Spring WebFlux | EtherFlow |
-|---|---|---|
-| Dependencies | Spring Context, AOP, Beans, Web, Reactor Core, Reactor Netty, Jackson — hundreds of classes | Only Jackson + Netty |
-| Startup time | 2-5 seconds (context scanning) | < 100ms |
-| JAR size | ~15-20 MB | ~2 MB |
-| Complexity | Deep hierarchy, proxies, 15+ annotations | Minimal interfaces, no proxies |
-| Learning curve | Must understand DI, AOP, Bean lifecycle | Just Mono/Flux and RouterFunction |
+| Aspect | Spring WebFlux | Project Reactor | EtherFlow |
+|:---|:---|:---|:---|
+| **Primary Focus** | Heavy enterprise-grade reactive web framework | Foundation library for reactive streams (types only) | Lightweight, self-contained reactive web framework |
+| **Footprint (JAR Size)** | Large (~15-20 MB including Spring runtime) | Small (~3 MB, but requires separate Web Server like Netty) | Ultra-lightweight (~2 MB self-contained web framework) |
+| **Startup Time** | Slow (2 - 5 seconds due to DI & classpath scanning) | Instant (library only, no server startup out of the box) | Blazing fast (< 100ms full server startup) |
+| **Dependencies** | Spring Context, Beans, AOP, Web, Jackson, Netty, Reactor | Zero dependencies (core reactive library only) | Minimal (Netty for server + Jackson for JSON, zero Spring) |
+| **Simplicity** | Complex (deep hierarchy, proxy-based AOP, 15+ annotations) | Medium (complex operators and concurrency models) | Simple & clean (minimal interfaces, explicit builder DSL) |
+| **Learning Curve** | High (must learn Spring DI + Reactive models) | Medium (focuses only on reactive streams APIs) | Low (straightforward reactive model + functional DSL) |
+| **Multiplatform Client** | Tied to Reactor/Netty, JVM-only | JVM-only | Multiplatform KMP client (runs on JVM, iOS, Android, JS) |
 
 ## Architecture
 
@@ -208,6 +210,99 @@ fun UserProfile(userId: String) {
 | `etherflow-client-kmp` | KMP HTTP client (multiplatform — JVM, Android, iOS, JS) |
 | `etherflow-client-compose` | Compose Multiplatform helpers (Android, iOS, Desktop, Web) |
 
-## License
-
 MIT
+
+<style>
+.code-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(30, 41, 59, 0.85);
+  color: #e2e8f0;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+.code-container:hover .copy-btn {
+  opacity: 1;
+}
+.copy-btn:hover {
+  background: #334155;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.copy-btn:active {
+  transform: translateY(0);
+}
+.copy-btn.copied {
+  background: #059669;
+  border-color: #047857;
+  color: #fff;
+}
+.copy-btn svg {
+  flex-shrink: 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('div.highlighter-rouge pre, figure.highlight pre, pre').forEach((pre) => {
+    if (pre.parentElement.classList.contains('code-container')) return;
+
+    // Wrap pre in container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-container';
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    // Create copy button
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.setAttribute('aria-label', 'Copy code to clipboard');
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy</span>
+    `;
+    wrapper.appendChild(btn);
+
+    btn.addEventListener('click', () => {
+      const codeText = pre.innerText;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const span = btn.querySelector('span');
+        span.innerText = 'Copied!';
+        btn.classList.add('copied');
+        
+        const originalIcon = btn.querySelector('svg').innerHTML;
+        btn.querySelector('svg').innerHTML = `
+          <polyline points="20 6 9 17 4 12"></polyline>
+        `;
+
+        setTimeout(() => {
+          span.innerText = 'Copy';
+          btn.classList.remove('copied');
+          btn.querySelector('svg').innerHTML = originalIcon;
+        }, 1500);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    });
+  });
+});
+</script>
