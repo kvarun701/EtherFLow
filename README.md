@@ -512,6 +512,218 @@ fun main() {
 
 ---
 
+## Android Studio
+
+Use `etherflow-client` as your HTTP client in Android apps — same `Mono<T>` reactive types, no Retrofit/RxJava boilerplate.
+
+### 1. Add the dependency
+
+**`build.gradle.kts` (Module: app):**
+```kotlin
+dependencies {
+    implementation("io.etherflow:etherflow-client:0.1.0")
+}
+```
+
+**`build.gradle` (Groovy):**
+```groovy
+dependencies {
+    implementation 'io.etherflow:etherflow-client:0.1.0'
+}
+```
+
+### 2. Add INTERNET permission
+
+**`AndroidManifest.xml`:**
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+For local development against `http://10.0.2.2` (Android emulator → host), add a network security config:
+
+**`res/xml/network_security_config.xml`:**
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
+```
+
+Reference it in `AndroidManifest.xml`:
+```xml
+<application
+    android:networkSecurityConfig="@xml/network_security_config"
+    ...>
+```
+
+### 3. Kotlin — ViewModel + Activity example
+
+```kotlin
+// UserRepository.kt
+class UserRepository {
+    private val client = HttpClient.builder()
+        .baseUrl("https://jsonplaceholder.typicode.com")
+        .retry(3)
+        .cache(Duration.ofMinutes(5), 100)
+        .build()
+
+    fun getUser(id: String): Mono<User> = client.get()
+        .uri("/users/{id}", id)
+        .retrieve()
+        .bodyTo<User>()
+
+    fun getUsers(): Mono<List<User>> = client.get()
+        .uri("/users")
+        .retrieve()
+        .bodyTo<List<User>>()
+}
+
+// UserViewModel.kt
+class UserViewModel : ViewModel() {
+    private val repository = UserRepository()
+    private val _user = MutableLiveData<User?>()
+    val user: LiveData<User?> = _user
+    private val _error = MutableLiveData<String?>()
+    val error: LiveData<String?> = _error
+
+    fun loadUser(id: String) {
+        repository.getUser(id).subscribe(
+            { user -> _user.postValue(user) },
+            { e -> _error.postValue(e.message) }
+        )
+    }
+}
+
+// MainActivity.kt
+class MainActivity : AppCompatActivity() {
+    private val viewModel: UserViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel.user.observe(this) { user ->
+            if (user != null) binding.nameText.text = user.name
+        }
+        viewModel.error.observe(this) { msg ->
+            if (msg != null) Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+        viewModel.loadUser("1")
+    }
+}
+```
+
+### 4. Java — AsyncTask / Executor example
+
+```java
+// UserRepository.java
+public class UserRepository {
+    private final HttpClient client = HttpClient.builder()
+        .baseUrl("https://jsonplaceholder.typicode.com")
+        .retry(3)
+        .build();
+
+    public Mono<User> getUser(String id) {
+        return client.get()
+            .uri("/users/{id}", id)
+            .retrieve()
+            .bodyTo(User.class);
+    }
+}
+
+// MainActivity.java
+public class MainActivity extends AppCompatActivity {
+    private TextView nameText;
+    private UserRepository repository = new UserRepository();
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        nameText = findViewById(R.id.nameText);
+
+        repository.getUser("1").subscribe(
+            user -> runOnUiThread(() -> nameText.setText(user.getName())),
+            e -> runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show())
+        );
+    }
+}
+```
+
+> `Mono.subscribe()` is non-blocking — OkHttp performs the network call on its own thread pool. The response arrives asynchronously via the `onNext`/`onError` callbacks. Use `runOnUiThread()` or `postValue()` to update the UI on Android's main thread.
+
+### 5. Retrofit → EtherFlow migration
+
+**Retrofit (before):**
+```kotlin
+interface Api {
+    @GET("users/{id}")
+    fun getUser(@Path("id") String id): Call<User>
+
+    @POST("users")
+    fun createUser(@Body User user): Call<User>
+}
+
+// Usage with callbacks
+val call = api.getUser("1")
+call.enqueue(object : Callback<User> {
+    override fun onResponse(call: Call<User>, response: Response<User>) {
+        if (response.isSuccessful) {
+            val user = response.body()
+            // update UI
+        }
+    }
+    override fun onFailure(call: Call<User>, t: Throwable) {
+        // handle error
+    }
+})
+```
+
+**EtherFlow (after):**
+```kotlin
+val client = HttpClient.builder()
+    .baseUrl("https://api.example.com")
+    .retry(3)
+    .build()
+
+// Same API — just method chains, no interface
+val user: Mono<User> = client.get()
+    .uri("/users/{id}", 1)
+    .retrieve()
+    .bodyTo<User>()
+
+user.subscribe(
+    { user -> viewModel.user.postValue(user) },
+    { e -> viewModel.error.postValue(e.message) }
+)
+
+// POST with body — fluent, no @Body annotation
+val created: Mono<User> = client.post()
+    .uri("/users")
+    .body(User(null, "Alice", "alice@example.com"))
+    .retrieve()
+    .bodyTo<User>()
+```
+
+### 6. ProGuard / R8 rules
+
+If you enable minification, add these rules to `proguard-rules.pro`:
+
+```
+# EtherFlow Client
+-keep class io.etherflow.** { *; }
+
+# Jackson
+-keep class com.fasterxml.** { *; }
+-keepattributes *Annotation*, Signature, Exception
+-keepclassmembers class * {
+    @com.fasterxml.jackson.annotation.* <fields>;
+}
+-dontwarn com.fasterxml.**
+```
+
+---
+
 ## Modules
 
 | Module | Description |
