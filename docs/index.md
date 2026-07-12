@@ -20,7 +20,8 @@ A lightweight reactive web framework for Java built from scratch — zero Spring
 - **Filter Chain** — WebFilter + WebExceptionHandler pipeline
 - **Netty Server** — Run on Netty with a single entry point
 - **Zero Spring Dependency** — No ApplicationContext, no autoconfiguration, no XML
-- **Java 21+** — Sealed classes, pattern matching, records, virtual threads compatible
+- **Java 21+ & Kotlin** — Sealed classes, pattern matching, records, virtual threads compatible
+- **KMP HTTP Client** — Fluent API with multipart upload, binary download, streaming (`Flow<ByteArray>`), WebSocket — on JVM, Android, iOS, JS
 
 ## Quick Start
 
@@ -95,6 +96,70 @@ mvn install -DskipTests
 ```
 
 Requires: Java 21+, Apache Maven 3.8+
+
+### Kotlin + KMP Client
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("io.etherflow:etherflow-client-kmp:0.1.0")
+}
+```
+
+```kotlin
+import io.etherflow.client.kmp.*
+import io.etherflow.client.kmp.internal.platformEngine
+
+val client = httpClient {
+    baseUrl = "https://api.example.com"
+    retryCount = 2
+}.apply { install(platformEngine()) }
+
+// JSON
+val user: User = client.get("/users/1").bodyAs<User>()
+
+// Multipart upload
+client.post("/upload").multipart {
+    field("user", "bob")
+    file("avatar", "photo.jpg", bytes, "image/jpeg")
+}.body()
+
+// Binary download
+val bytes: ByteArray = client.get("/image.png").bodyAsBytes()
+client.get("/large-file.zip").downloadTo("/tmp/output.zip")
+
+// Streaming
+val streamed = client.get("/video.mp4").stream()
+streamed.chunks.collect { chunk -> /* process */ }
+
+// WebSocket
+val ws = client.webSocket("wss://echo.example.com")
+ws.send("Hello")
+ws.incoming.collect { msg ->
+    when (msg) {
+        is WebSocketMessage.Text -> println(msg.text)
+        is WebSocketMessage.Binary -> println("binary: ${msg.data.size}B")
+    }
+}
+ws.close()
+```
+
+### KMP targets & features
+
+| Target | Engine | JSON | Multipart | Download | Streaming | WebSocket |
+|--------|--------|------|-----------|----------|-----------|-----------|
+| JVM / Android | OkHttp | ✅ | ✅ | ✅ | ✅ 8 KB | ✅ |
+| iOS | NSURLSession | ✅ | ✅ | ✅ | ⏳ | ✅ |
+| JS Browser | `window.fetch` | ✅ | ✅ | ❌ | ✅ | ✅ |
+
+### Modules
+
+| Module | Description |
+|--------|-------------|
+| `etherflow-core` | Mono/Flux, Schedulers — reactive types |
+| `etherflow-web` | RouterFunction DSL, DispatcherHandler |
+| `etherflow-server-netty` | Netty server adapter |
+| `etherflow-client-kmp` | KMP HTTP client (multiplatform) |
 
 ## License
 
