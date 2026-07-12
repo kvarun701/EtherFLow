@@ -1,6 +1,6 @@
 # EtherFlow
 
-**A lightweight reactive web framework for Java and Kotlin — zero Spring dependency.**
+**A lightweight multiplatform reactive web framework — zero Spring dependency.**
 
 EtherFlow is a from-scratch implementation of a reactive web framework inspired by Spring WebFlux. It gives you `Mono`/`Flux` reactive types, a `RouterFunction` DSL for HTTP endpoints, JSON serialization via Jackson, and a Netty server adapter — all without pulling in the Spring Framework.
 

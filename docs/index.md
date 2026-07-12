@@ -1,11 +1,11 @@
 ---
 title: EtherFlow
-description: A lightweight reactive web framework for Java — zero Spring dependency
+description: A lightweight multiplatform reactive web framework — zero Spring dependency
 ---
 
 # EtherFlow
 
-A lightweight reactive web framework for Java built from scratch — zero Spring dependency.
+A lightweight multiplatform reactive web framework — zero Spring dependency.
 
 [GitHub](https://github.com/kvarun701/EtherFLow) | [API Docs](api)
 
