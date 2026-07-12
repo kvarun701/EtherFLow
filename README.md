@@ -1,6 +1,6 @@
 # EtherFlow
 
-**A lightweight reactive web framework for Java — zero Spring dependency.**
+**A lightweight reactive web framework for Java and Kotlin — zero Spring dependency.**
 
 EtherFlow is a from-scratch implementation of a reactive web framework inspired by Spring WebFlux. It gives you `Mono`/`Flux` reactive types, a `RouterFunction` DSL for HTTP endpoints, JSON serialization via Jackson, and a Netty server adapter — all without pulling in the Spring Framework.
 
@@ -16,8 +16,8 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 - **Front Controller** — `DispatcherHandler` with pluggable `HandlerMapping` / `HandlerAdapter`
 - **Filter Chain** — `WebFilter` + `WebExceptionHandler` pipeline
 - **Netty Server Adapter** — Run on Netty with a single entry point
-- **Zero Spring Dependency** — No ApplicationContext, no autoconfiguration, no XML — just pure Java
-- **Java 21+** — Sealed classes, pattern matching, records, virtual threads compatible
+- **Zero Spring Dependency** — No ApplicationContext, no autoconfiguration, no XML — just pure Java/Kotlin
+- **Java 21+ & Kotlin** — Sealed classes, pattern matching, records, data classes, reified generics
 
 ---
 
@@ -33,6 +33,7 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 | **Debugging** | Proxy chains, nested contexts, complex stack traces | Straightforward call stacks |
 | **Control** | Framework dictates architecture via IoC | You control every component manually or via simple composition |
 | **Virtual threads** | Works but adds another layer of complexity | Clean — just use `Schedulers.immediate()` on virtual threads |
+| **Kotlin** | Works but reactive types clash with coroutines | Pure Java types — no coroutine conflicts |
 
 ### When to pick EtherFlow instead of WebFlux
 
@@ -41,6 +42,7 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 - You want **full control** without framework magic
 - You're **learning** reactive programming and want to see how the pieces fit
 - You need reactive HTTP for a **CLI tool, agent, or edge service**
+- You want a **Kotlin-friendly** reactive stack without coroutine complexity
 
 ### When to stick with Spring WebFlux
 
@@ -144,6 +146,7 @@ java -jar etherflow-sample/build/libs/etherflow-sample-0.1.0.jar
 
 ### Hello World in 30 seconds
 
+**Java:**
 ```java
 import io.etherflow.core.Mono;
 import io.etherflow.server.netty.NettyServer;
@@ -168,66 +171,131 @@ public class App {
 }
 ```
 
----
+**Kotlin:**
+```kotlin
+import io.etherflow.core.Mono
+import io.etherflow.server.netty.NettyServer
+import io.etherflow.web.DispatcherHandler
+import io.etherflow.web.function.*
 
-## Modules
+fun main() {
+    val routes = RouterFunction.route()
+        .GET("/hello") { Mono.just(ServerResponse.ok("Hello EtherFlow!")) }
+        .build()
 
-| Module | Description |
-|--------|-------------|
-| `etherflow-streams` | Reactive Streams SPI: `Publisher`, `Subscriber`, `Subscription`, `Processor` |
-| `etherflow-core` | `Mono<T>`, `Flux<T>`, `Schedulers` — core reactive types with operators |
-| `etherflow-codec` | `DataBuffer`, `HttpMessageReader`/`Writer`, `JacksonCodec` for JSON ser/des |
-| `etherflow-http` | `HttpHandler`, `ServerWebExchange`, `ServerHttpRequest`/`Response`, `WebFilter`, `WebExceptionHandler` |
-| `etherflow-web` | `DispatcherHandler`, `HandlerMapping`, `HandlerAdapter`, `RouterFunction`, `HandlerFunction`, `RequestPredicate`, `ServerRequest`/`Response` |
-| `etherflow-server-netty` | Netty server adapter |
-| `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all modules |
+    val dispatcher = DispatcherHandler()
+    dispatcher.addHandlerMapping(RouterFunctionMapping(routes))
+    dispatcher.addHandlerAdapter(RouterFunctionMapping(routes))
 
----
-
-## Operator Reference
-
-### Mono
-
-| Method | Description |
-|--------|-------------|
-| `just(T)` | Emit a single value |
-| `empty()` | Complete without emitting |
-| `error(Throwable)` | Emit an error |
-| `fromCallable(Callable)` | Lazily produce a value |
-| `defer(Supplier)` | Lazily create the Mono per subscription |
-| `map(Function)` | Transform the value |
-| `flatMap(Function)` | Transform into another Mono |
-| `filter(Predicate)` | Only pass if predicate matches |
-| `doOnSuccess(Consumer)` | Side-effect on success |
-| `doOnError(Consumer)` | Side-effect on error |
-| `switchIfEmpty(Supplier)` | Fallback Mono if source is empty |
-| `then()` | Wait for completion, discard value |
-| `thenReturn(R)` | Wait for completion, emit fixed value |
-| `subscribeOn(Executor)` | Run subscription on given executor |
-| `publishOn(Executor)` | Run downstream on given executor |
-| `block()` | Block until value or error (for testing) |
-
-### Flux
-
-| Method | Description |
-|--------|-------------|
-| `just(T...)` | Emit multiple values |
-| `fromIterable(Iterable)` | Emit from iterable |
-| `range(int, int)` | Emit a range of integers |
-| `empty()` | Complete without emitting |
-| `error(Throwable)` | Emit an error |
-| `map(Function)` | Transform each element |
-| `flatMap(Function)` | Transform each into a Publisher and merge |
-| `filter(Predicate)` | Only pass elements matching predicate |
-| `subscribeOn(Executor)` | Run subscription on given executor |
-| `publishOn(Executor)` | Run downstream on given executor |
-| `then()` | Return Mono<Void> on completion |
+    val server = NettyServer(8080, dispatcher)
+    server.start()
+    println("Server running on http://localhost:8080")
+    server.await()
+}
+```
 
 ---
 
-## Spring Boot Starter
+## Building a REST API with Kotlin
 
-Use EtherFlow as your reactive web runtime inside Spring Boot — no Tomcat, no Spring MVC, just EtherFlow + Netty.
+EtherFlow works seamlessly with Kotlin's idiomatic features: data classes, lambda syntax, reified generics, and extension functions.
+
+### Domain model with data classes
+
+```kotlin
+@JvmInline
+value class TaskId(val value: String)
+
+data class Task(
+    val id: TaskId,
+    val title: String,
+    val completed: Boolean = false
+)
+```
+
+### Handler with idiomatic Kotlin
+
+```kotlin
+import io.etherflow.core.Mono
+import io.etherflow.web.function.*
+
+class TaskHandler {
+    private val tasks = mutableMapOf<String, Task>()
+
+    fun listTasks(request: ServerRequest): Mono<ServerResponse> =
+        Mono.just(ServerResponse.ok(tasks.values.toList()))
+
+    fun getTask(request: ServerRequest): Mono<ServerResponse> {
+        val id = request.pathVariable("id")
+        return tasks[id]?.let {
+            Mono.just(ServerResponse.ok(it))
+        } ?: Mono.just(ServerResponse.notFound())
+    }
+
+    fun createTask(request: ServerRequest): Mono<ServerResponse> =
+        request.bodyTo<Task>().flatMap { task ->
+            tasks[task.id.value] = task
+            Mono.just(ServerResponse.created().body(task))
+        }
+}
+```
+
+The `bodyTo<T>()` call uses a Kotlin inline reified extension — no class token needed.
+
+### Route definition with trailing lambda
+
+```kotlin
+val routes = RouterFunction.route()
+    .GET("/tasks") { handler.listTasks(it) }
+    .GET("/tasks/{id}") { handler.getTask(it) }
+    .POST("/tasks") { handler.createTask(it) }
+    .build()
+```
+
+### Full runnable Kotlin app
+
+```kotlin
+import io.etherflow.core.Mono
+import io.etherflow.server.netty.NettyServer
+import io.etherflow.web.DispatcherHandler
+import io.etherflow.web.function.*
+
+data class Task(val id: String, val title: String, val completed: Boolean = false)
+
+fun main() {
+    val tasks = mutableMapOf<String, Task>()
+
+    val routes = RouterFunction.route()
+        .GET("/tasks") { Mono.just(ServerResponse.ok(tasks.values.toList())) }
+        .GET("/tasks/{id}") { req ->
+            val task = tasks[req.pathVariable("id")]
+            if (task != null) Mono.just(ServerResponse.ok(task))
+            else Mono.just(ServerResponse.notFound())
+        }
+        .POST("/tasks") { req ->
+            req.bodyTo<Task>().flatMap { task ->
+                tasks[task.id] = task
+                Mono.just(ServerResponse.created().body(task))
+            }
+        }
+        .build()
+
+    val dispatcher = DispatcherHandler()
+    dispatcher.addHandlerMapping(RouterFunctionMapping(routes))
+    dispatcher.addHandlerAdapter(RouterFunctionMapping(routes))
+
+    val server = NettyServer(8080, dispatcher)
+    server.start()
+    println("Task API running on http://localhost:8080")
+    server.await()
+}
+```
+
+---
+
+## Kotlin Spring Boot Starter
+
+Use EtherFlow as your reactive web runtime in a Kotlin Spring Boot application.
 
 ### Add the dependency
 
@@ -251,26 +319,50 @@ implementation("io.etherflow:etherflow-spring-boot-starter:0.1.0")
 implementation 'io.etherflow:etherflow-spring-boot-starter:0.1.0'
 ```
 
-### Define `RouterFunction` beans
+### Full Kotlin Spring Boot app
 
-```java
+```kotlin
+package com.example
+
+import io.etherflow.core.Mono
+import io.etherflow.web.function.RouterFunction
+import io.etherflow.web.function.ServerResponse
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+import org.springframework.context.annotation.Bean
+
 @SpringBootApplication
-public class MyApp {
-
-    public static void main(String[] args) {
-        SpringApplication.run(MyApp.class, args);
-    }
+class TaskApplication {
 
     @Bean
-    public RouterFunction routes() {
-        return RouterFunction.route()
-                .GET("/hello", req -> Mono.just(ServerResponse.ok("Hello EtherFlow!")))
-                .build();
-    }
+    fun taskRoutes(): RouterFunction = RouterFunction.route()
+        .GET("/hello") { Mono.just(ServerResponse.ok("Hello from Kotlin + EtherFlow!")) }
+        .build()
+}
+
+fun main(args: Array<String>) {
+    runApplication<TaskApplication>(*args)
 }
 ```
 
-### Configure
+### Route definitions with `@Bean` functions
+
+```kotlin
+@Bean
+fun userRoutes(handler: UserHandler): RouterFunction = RouterFunction.route()
+    .GET("/users") { handler.listUsers() }
+    .GET("/users/{id}") { handler.getUser(it) }
+    .POST("/users") { handler.createUser(it) }
+    .build()
+
+@Bean
+fun taskRoutes(handler: TaskHandler): RouterFunction = RouterFunction.route()
+    .GET("/tasks") { handler.listTasks() }
+    .POST("/tasks") { handler.createTask(it) }
+    .build()
+```
+
+### Configuration
 
 ```properties
 # application.properties
@@ -278,6 +370,63 @@ etherflow.port=8080
 ```
 
 EtherFlow auto-configuration collects all `RouterFunction` beans, wires them into a `DispatcherHandler`, and starts the Netty server — zero manual setup.
+
+---
+
+## Modules
+
+| Module | Description |
+|--------|-------------|
+| `etherflow-streams` | Reactive Streams SPI: `Publisher`, `Subscriber`, `Subscription`, `Processor` |
+| `etherflow-core` | `Mono<T>`, `Flux<T>`, `Schedulers` — core reactive types with operators |
+| `etherflow-codec` | `DataBuffer`, `HttpMessageReader`/`Writer`, `JacksonCodec` for JSON ser/des |
+| `etherflow-http` | `HttpHandler`, `ServerWebExchange`, `ServerHttpRequest`/`Response`, `WebFilter`, `WebExceptionHandler` |
+| `etherflow-web` | `DispatcherHandler`, `HandlerMapping`, `HandlerAdapter`, `RouterFunction`, `HandlerFunction`, `RequestPredicate`, `ServerRequest`/`Response` |
+| `etherflow-server-netty` | Netty server adapter |
+| `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all modules |
+
+---
+
+## Operator Reference
+
+### Mono
+
+| Method | Description | Kotlin |
+|--------|-------------|--------|
+| `just(T)` | Emit a single value | `Mono.just(value)` |
+| `empty()` | Complete without emitting | `Mono.empty()` |
+| `error(Throwable)` | Emit an error | `Mono.error(e)` |
+| `fromCallable(Callable)` | Lazily produce a value | `Mono.fromCallable { compute() }` |
+| `defer(Supplier)` | Lazily create the Mono per subscription | `Mono.defer { createMono() }` |
+| `map(Function)` | Transform the value | `.map { it.uppercase() }` |
+| `flatMap(Function)` | Transform into another Mono | `.flatMap { fetch(it) }` |
+| `filter(Predicate)` | Only pass if predicate matches | `.filter { it > 0 }` |
+| `doOnSuccess(Consumer)` | Side-effect on success | `.doOnSuccess { log(it) }` |
+| `doOnError(Consumer)` | Side-effect on error | `.doOnError { log(it) }` |
+| `switchIfEmpty(Supplier)` | Fallback Mono if source is empty | `.switchIfEmpty { fallback() }` |
+| `then()` | Wait for completion, discard value | `.then()` |
+| `thenReturn(R)` | Wait for completion, emit fixed value | `.thenReturn(result)` |
+| `subscribeOn(Executor)` | Run subscription on given executor | `.subscribeOn(scheduler)` |
+| `publishOn(Executor)` | Run downstream on given executor | `.publishOn(scheduler)` |
+| `block()` | Block until value or error (for testing) | `.block()` |
+
+### Flux
+
+| Method | Description | Kotlin |
+|--------|-------------|--------|
+| `just(T...)` | Emit multiple values | `Flux.just(a, b, c)` |
+| `fromIterable(Iterable)` | Emit from iterable | `Flux.fromIterable(list)` |
+| `range(int, int)` | Emit a range of integers | `Flux.range(1, 10)` |
+| `empty()` | Complete without emitting | `Flux.empty()` |
+| `error(Throwable)` | Emit an error | `Flux.error(e)` |
+| `map(Function)` | Transform each element | `.map { it * 2 }` |
+| `flatMap(Function)` | Transform each into a Publisher and merge | `.flatMap { fetchMany(it) }` |
+| `filter(Predicate)` | Only pass elements matching predicate | `.filter { it > 5 }` |
+| `subscribeOn(Executor)` | Run subscription on given executor | `.subscribeOn(scheduler)` |
+| `publishOn(Executor)` | Run downstream on given executor | `.publishOn(scheduler)` |
+| `then()` | Return Mono<Void> on completion | `.then()` |
+
+---
 
 ## Building from Source
 
@@ -313,6 +462,7 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] Functional endpoint DSL (RouterFunction)
 - [x] DispatcherHandler with filter chain
 - [x] Netty server adapter
+- [x] Kotlin DSL support (data classes, reified generics, lambdas)
 - [ ] Annotated controllers (`@Controller`, `@RequestMapping`)
 - [ ] WebClient (reactive HTTP client)
 - [ ] More Flux operators (`merge`, `zip`, `concatMap`, `retry`, `timeout`)
