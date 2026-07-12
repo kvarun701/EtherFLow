@@ -244,15 +244,27 @@ EtherFlow auto-configuration collects all `RouterFunction` beans, wires them int
 
 ## Building from Source
 
+### Maven
+
 ```bash
 git clone https://github.com/kvarun701/EtherFlow.git
 cd EtherFlow
-mvn compile           # build
-mvn test              # run tests (27+ tests)
-mvn install -DskipTests  # install to local .m2
+mvn compile                # build
+mvn test                   # run tests (27+ tests)
+mvn install -DskipTests    # install to local .m2
 ```
 
-Requires: **Java 21+**, **Apache Maven 3.8+**
+### Gradle
+
+```bash
+git clone https://github.com/kvarun701/EtherFlow.git
+cd EtherFlow
+./gradlew compileJava      # build
+./gradlew test             # run tests
+./gradlew jar              # build all jars
+```
+
+Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12+** (for Gradle build, wrapper included)
 
 ---
 
