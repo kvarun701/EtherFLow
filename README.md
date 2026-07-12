@@ -726,7 +726,7 @@ If you enable minification, add these rules to `proguard-rules.pro`:
 
 ## Kotlin Multiplatform (KMP) — Ktor-like API
 
-The `etherflow-client-kmp` module provides a **Ktor-inspired DSL** for Kotlin Multiplatform projects. Write API calls using `suspend` functions and `kotlinx.serialization` — works on JVM, Android, and soon iOS/Native.
+The `etherflow-client-kmp` module provides a **Ktor-inspired DSL** for Kotlin Multiplatform projects. Write API calls using `suspend` functions and `kotlinx.serialization` — works on JVM, Android, iOS, and JS/browser.
 
 ### Add the dependency
 
@@ -859,9 +859,113 @@ class UserViewModel : ViewModel() {
 
 | Target | Engine | JSON | Multipart | Download | Streaming | WebSocket |
 |--------|--------|------|-----------|----------|-----------|-----------|
-| JVM / Android | OkHttp | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks | ✅ `OkHttpWebSocket` |
+| JVM Desktop | OkHttp | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks | ✅ `OkHttpWebSocket` |
+| Android | OkHttp (from jvmMain) | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks | ✅ `OkHttpWebSocket` |
 | iOS (x64, arm64, simulator) | NSURLSession | ✅ | ✅ | ✅ `NSData.writeToFile` | ⏳ fallback | ✅ `NSURLSessionWebSocketTask` |
 | JS (IR browser) | `window.fetch` | ✅ | ✅ | ❌ browser sandbox | ✅ `ReadableStream` | ✅ Browser `WebSocket` |
+
+### Java-friendly API
+
+The KMP client is fully callable from Java. Non-reified overloads (`bodyJson`, `bodyText`, `bodyBytes`, `execute`) are provided for Java interoperability.
+
+```java
+import io.etherflow.client.kmp.*;
+
+// Create client (engine installed via Kotlin platformHttpClient() or directly)
+HttpClient client = new HttpClient(new HttpClientConfig());
+
+// GET — execute() returns HttpResponse
+HttpResponse response = client.get("https://api.example.com/users/{id}", 1)
+    .bearerAuth("token123")
+    .execute();
+
+int status = response.getStatusCode();
+String body = response.getBodyAsString();
+
+// POST with raw JSON string
+HttpResponse created = client.post("https://api.example.com/users")
+    .bodyJson("{\"name\":\"Alice\",\"email\":\"alice@example.com\"}")
+    .execute();
+
+// Binary download
+byte[] image = client.get("/image.png").bodyAsBytes();
+long size = client.get("/file.zip").downloadTo("/tmp/output.zip");
+```
+
+---
+
+### Compose Multiplatform (Android, iOS, Desktop, Web)
+
+The `etherflow-client-compose` module provides Compose-friendly helpers for reactive HTTP — no manual `LaunchedEffect` boilerplate.
+
+**Add the dependency:**
+```kotlin
+implementation("io.etherflow:etherflow-client-compose:0.1.0")
+```
+
+**Basic usage:**
+```kotlin
+@Composable
+fun UserProfile(userId: String) {
+    val client = rememberHttpClient {
+        baseUrl = "https://api.example.com"
+        retryCount = 2
+    }
+
+    val userState = httpGetAs(client, "/users/{id}", userId, serializer = User.serializer())
+
+    when (val state = userState.value) {
+        is HttpRequestState.Loading -> CircularProgressIndicator()
+        is HttpRequestState.Success -> Text("Hello, ${state.data.name}")
+        is HttpRequestState.Error -> Text("Error: ${state.exception.message}")
+    }
+}
+```
+
+**POST with JSON body:**
+```kotlin
+@Composable
+fun CreateUserForm() {
+    val client = rememberHttpClient()
+    val result = httpPostAs(
+        client = client,
+        url = "/users",
+        serializer = User.serializer()
+    ) {
+        bodyJson("""{"name":"Alice","email":"alice@example.com"}""")
+    }
+
+    // result.value == Loading / Success(user) / Error(e)
+}
+```
+
+**Custom request state (any suspend block):**
+```kotlin
+@Composable
+fun WebSocketMessages(client: HttpClient) {
+    val messages = produceHttpState {
+        val ws = client.webSocket("wss://echo.example.com")
+        val texts = mutableListOf<String>()
+        ws.incoming.collect { msg ->
+            if (msg is WebSocketMessage.Text) texts.add(msg.text)
+        }
+        texts
+    }
+
+    // messages.value == Loading / Success(list) / Error(e)
+}
+```
+
+**Available composables in `io.etherflow.client.compose`:**
+
+| Function | Description |
+|----------|-------------|
+| `rememberHttpClient {}` | Creates and remembers an `HttpClient` with platform engine |
+| `produceHttpState(key, fetch)` | Wraps any suspend block into `State<HttpRequestState<T>>` |
+| `httpGetAs(client, url, ..., serializer)` | GET + auto-deserialize |
+| `httpPostAs(client, url, ..., serializer)` | POST + auto-deserialize |
+
+The `etherflow-client-compose` module compiles for JVM, Android, iOS, and JS/browser.
 
 ---
 
@@ -877,7 +981,8 @@ class UserViewModel : ViewModel() {
 | `etherflow-server-netty` | Netty server adapter |
 | `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all server modules |
 | `etherflow-client` | Reactive HTTP client — OkHttp transport, Jackson codec, retry, caching, Kotlin extensions |
-| `etherflow-client-kmp` | KMP HTTP client — Ktor-like DSL, coroutines, `kotlinx.serialization`, multiplatform |
+| `etherflow-client-kmp` | KMP HTTP client — Ktor-like DSL, coroutines, `kotlinx.serialization`, multiplatform (JVM, Android, iOS, JS) |
+| `etherflow-client-compose` | Compose Multiplatform helpers — `rememberHttpClient`, `produceHttpState`, `httpGetAs`, `httpPostAs` |
 
 ---
 
@@ -966,6 +1071,8 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] Binary download (`bodyAsBytes`, `downloadTo`)
 - [x] Streaming response (`StreamedResponse`, `Flow<ByteArray>` chunks)
 - [x] WebSocket (`WebSocketSession`, `incoming: Flow<WebSocketMessage>`, send)
+- [x] Android target (`androidTarget()` in KMP, shares OkHttp engine with JVM)
+- [x] Compose Multiplatform helpers (`etherflow-client-compose` — `rememberHttpClient`, `produceHttpState`, `httpGetAs`, `httpPostAs`)
 - [ ] Server-Sent Events (SSE)
 - [ ] Micrometer metrics integration
 - [ ] GraalVM native-image support

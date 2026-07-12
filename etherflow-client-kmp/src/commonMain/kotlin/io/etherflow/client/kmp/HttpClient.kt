@@ -2,7 +2,9 @@ package io.etherflow.client.kmp
 
 fun httpClient(block: HttpClientConfig.() -> Unit): HttpClient = HttpClient(HttpClientConfig().apply(block))
 
-class HttpClient internal constructor(val config: HttpClientConfig) {
+fun createHttpClient(config: HttpClientConfig = HttpClientConfig()): HttpClient = HttpClient(config)
+
+class HttpClient(val config: HttpClientConfig) {
 
     private var engine: HttpClientEngine? = null
 

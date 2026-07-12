@@ -11,3 +11,4 @@ build/
 .classpath
 .DS_Store
 .github/workflows/
+local.properties

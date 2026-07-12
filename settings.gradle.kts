@@ -1,3 +1,20 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+@Suppress("UnstableApiUsage")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
 rootProject.name = "etherflow"
 
 include(
@@ -13,5 +30,6 @@ include(
     "etherflow-sample",
     "etherflow-client",
     "etherflow-client-kmp",
+    "etherflow-client-compose",
     "etherflow-sample-spring-boot",
 )

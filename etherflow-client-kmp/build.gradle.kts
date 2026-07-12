@@ -1,10 +1,25 @@
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
+    id("com.android.library")
 }
 
 group = "io.etherflow"
 version = "0.1.0"
+
+android {
+    namespace = "io.etherflow.client.kmp"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 21
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+}
 
 kotlin {
     jvm {
@@ -12,6 +27,8 @@ kotlin {
             kotlinOptions.jvmTarget = "21"
         }
     }
+
+    androidTarget()
 
     iosX64()
     iosArm64()
@@ -30,12 +47,22 @@ kotlin {
             }
         }
 
-        val jvmMain by getting {
+        val jvmAndAndroidMain = sourceSets.create("jvmAndAndroidMain") {
+            dependsOn(commonMain)
             dependencies {
-                implementation(project(":etherflow-client"))
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            }
+        }
+
+        val jvmMain by getting {
+            dependsOn(jvmAndAndroidMain)
+            dependencies {
                 implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
             }
+        }
+
+        val androidMain by getting {
+            dependsOn(jvmAndAndroidMain)
         }
 
         val iosMain by creating {

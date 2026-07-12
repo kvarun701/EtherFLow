@@ -31,10 +31,33 @@ class HttpRequestBuilder internal constructor(
         bodyBytes = multipart.toByteArray()
     }
 
-    suspend fun body(): HttpResponse {
+    suspend fun execute(): HttpResponse {
         val fullUrl = resolveUrl()
         val request = HttpRequest(method, fullUrl, headers.toMap(), bodyBytes)
         return engine.execute(request)
+    }
+
+    suspend fun body(): HttpResponse = execute()
+
+    suspend fun bodyJson(json: String): HttpResponse {
+        if (!headers.containsKey("Content-Type")) {
+            headers["Content-Type"] = "application/json"
+        }
+        bodyBytes = json.encodeToByteArray()
+        return execute()
+    }
+
+    suspend fun bodyText(text: String): HttpResponse {
+        if (!headers.containsKey("Content-Type")) {
+            headers["Content-Type"] = "text/plain"
+        }
+        bodyBytes = text.encodeToByteArray()
+        return execute()
+    }
+
+    suspend fun bodyBytes(data: ByteArray): HttpResponse {
+        bodyBytes = data
+        return execute()
     }
 
     suspend inline fun <reified T> body(value: T): HttpResponse {
@@ -43,22 +66,22 @@ class HttpRequestBuilder internal constructor(
         }
         val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         bodyBytes = json.encodeToString(serializer<T>(), value).encodeToByteArray()
-        return body()
+        return execute()
     }
 
     suspend inline fun <reified T> bodyAs(): T {
-        val response = body()
+        val response = execute()
         val json = Json { ignoreUnknownKeys = true }
         return json.decodeFromString(serializer<T>(), response.bodyAsString)
     }
 
     suspend fun bodyAsBytes(): ByteArray {
-        val response = body()
+        val response = execute()
         return response.body
     }
 
     suspend fun downloadTo(filePath: String): Long {
-        val response = body()
+        val response = execute()
         response.body.writeToFile(filePath)
         return response.body.size.toLong()
     }

@@ -97,7 +97,7 @@ mvn install -DskipTests
 
 Requires: Java 21+, Apache Maven 3.8+
 
-### Kotlin + KMP Client
+### KMP HTTP Client
 
 ```kotlin
 // build.gradle.kts
@@ -108,12 +108,11 @@ dependencies {
 
 ```kotlin
 import io.etherflow.client.kmp.*
-import io.etherflow.client.kmp.internal.platformEngine
 
-val client = httpClient {
+val client = platformHttpClient {
     baseUrl = "https://api.example.com"
     retryCount = 2
-}.apply { install(platformEngine()) }
+}
 
 // JSON
 val user: User = client.get("/users/1").bodyAs<User>()
@@ -122,7 +121,7 @@ val user: User = client.get("/users/1").bodyAs<User>()
 client.post("/upload").multipart {
     field("user", "bob")
     file("avatar", "photo.jpg", bytes, "image/jpeg")
-}.body()
+}.execute()
 
 // Binary download
 val bytes: ByteArray = client.get("/image.png").bodyAsBytes()
@@ -144,13 +143,60 @@ ws.incoming.collect { msg ->
 ws.close()
 ```
 
+### Java-friendly API
+
+```java
+import io.etherflow.client.kmp.*;
+
+HttpClient client = new HttpClient(new HttpClientConfig());
+
+HttpResponse response = client.get("https://api.example.com/users/{id}", 1)
+    .bearerAuth("token123")
+    .execute();
+
+int status = response.getStatusCode();
+String body = response.getBodyAsString();
+
+HttpResponse created = client.post("https://api.example.com/users")
+    .bodyJson("{\"name\":\"Alice\"}")
+    .execute();
+
+byte[] image = client.get("/image.png").bodyAsBytes();
+```
+
+### Compose Multiplatform
+
+Add `etherflow-client-compose` for Compose-friendly HTTP helpers:
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("io.etherflow:etherflow-client-compose:0.1.0")
+}
+```
+
+```kotlin
+@Composable
+fun UserProfile(userId: String) {
+    val client = rememberHttpClient { baseUrl = "https://api.example.com" }
+    val userState = httpGetAs(client, "/users/{id}", userId, serializer = User.serializer())
+
+    when (val state = userState.value) {
+        is HttpRequestState.Loading -> CircularProgressIndicator()
+        is HttpRequestState.Success -> Text("Hello, ${state.data.name}")
+        is HttpRequestState.Error -> Text("Error: ${state.exception.message}")
+    }
+}
+```
+
 ### KMP targets & features
 
-| Target | Engine | JSON | Multipart | Download | Streaming | WebSocket |
-|--------|--------|------|-----------|----------|-----------|-----------|
-| JVM / Android | OkHttp | ✅ | ✅ | ✅ | ✅ 8 KB | ✅ |
-| iOS | NSURLSession | ✅ | ✅ | ✅ | ⏳ | ✅ |
-| JS Browser | `window.fetch` | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Target | Engine | JSON | Multipart | Download | Streaming | WebSocket | Compose |
+|--------|--------|------|-----------|----------|-----------|-----------|---------|
+| JVM Desktop | OkHttp | ✅ | ✅ | ✅ | ✅ 8 KB | ✅ | ✅ |
+| Android | OkHttp | ✅ | ✅ | ✅ | ✅ 8 KB | ✅ | ✅ |
+| iOS | NSURLSession | ✅ | ✅ | ✅ | ⏳ | ✅ | ✅ |
+| JS Browser | `window.fetch` | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
 
 ### Modules
 
@@ -159,7 +205,8 @@ ws.close()
 | `etherflow-core` | Mono/Flux, Schedulers — reactive types |
 | `etherflow-web` | RouterFunction DSL, DispatcherHandler |
 | `etherflow-server-netty` | Netty server adapter |
-| `etherflow-client-kmp` | KMP HTTP client (multiplatform) |
+| `etherflow-client-kmp` | KMP HTTP client (multiplatform — JVM, Android, iOS, JS) |
+| `etherflow-client-compose` | Compose Multiplatform helpers (Android, iOS, Desktop, Web) |
 
 ## License
 
