@@ -17,7 +17,7 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 - **Filter Chain** — `WebFilter` + `WebExceptionHandler` pipeline
 - **Netty Server Adapter** — Run on Netty with a single entry point
 - **Zero Spring Dependency** — No ApplicationContext, no autoconfiguration, no XML — just pure Java/Kotlin
-- **Reactive HTTP Client** — `HttpClient` fluent API with `Mono<T>` responses, built-in retry, caching, streaming — works on Android
+- **KMP HTTP Client** — `HttpClient` fluent API with `Mono<T>` responses, built-in retry, multipart upload, binary download, streaming (`Flow<ByteArray>`), file I/O — works on JVM, Android, iOS, JS
 - **Java 21+ & Kotlin** — Sealed classes, pattern matching, records, data classes, reified generics
 
 ---
@@ -844,13 +844,13 @@ class UserViewModel : ViewModel() {
 }
 ```
 
-### KMP targets (all ship in `etherflow-client-kmp`)
+### KMP targets & features (all ship in `etherflow-client-kmp`)
 
-| Target | Status | Engine |
-|--------|--------|--------|
-| JVM / Android | ✅ Done | OkHttp |
-| iOS (x64, arm64, simulator) | ✅ Done | NSURLSession |
-| JS (IR browser) | ✅ Done | `window.fetch` |
+| Target | Engine | JSON | Multipart | Download | Streaming |
+|--------|--------|------|-----------|----------|-----------|
+| JVM / Android | OkHttp | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks |
+| iOS (x64, arm64, simulator) | NSURLSession | ✅ | ✅ | ✅ `NSData.writeToFile` | ⏳ fallback |
+| JS (IR browser) | `window.fetch` | ✅ | ✅ | ❌ browser sandbox | ✅ `ReadableStream` |
 
 ---
 
@@ -951,7 +951,9 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] KMP client with Ktor-like DSL (etherflow-client-kmp)
 - [ ] More Flux operators (`merge`, `zip`, `concatMap`, `retry`, `timeout`)
 - [ ] Customizable error handling
-- [ ] Multipart support
+- [x] Multipart upload
+- [x] Binary download (`bodyAsBytes`, `downloadTo`)
+- [x] Streaming response (`StreamedResponse`, `Flow<ByteArray>` chunks)
 - [ ] Server-Sent Events (SSE)
 - [ ] WebSocket support
 - [ ] Micrometer metrics integration
