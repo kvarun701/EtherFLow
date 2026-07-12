@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: etherflow-sample
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    startCommand: ""
