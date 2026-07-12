@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
 
     <name>EtherFlow</name>
-    <description>Reactive web framework for Java</description>
+    <description>A lightweight, high-performance Reactive Web Framework for Java, Kotlin &amp; Kotlin Multiplatform built from scratch</description>
     <url>https://github.com/kvarun701/EtherFLow</url>
 
     <licenses>
