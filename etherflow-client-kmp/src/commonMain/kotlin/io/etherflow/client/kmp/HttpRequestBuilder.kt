@@ -63,6 +63,12 @@ class HttpRequestBuilder internal constructor(
         return response.body.size.toLong()
     }
 
+    suspend fun stream(): StreamedResponse {
+        val fullUrl = resolveUrl()
+        val request = HttpRequest(method, fullUrl, headers.toMap(), bodyBytes)
+        return engine.executeStreaming(request)
+    }
+
     private fun resolveUrl(): String {
         var url = if (urlTemplate.startsWith("http")) urlTemplate
                   else config.baseUrl.trimEnd('/') + "/" + urlTemplate.trimStart('/')

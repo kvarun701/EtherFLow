@@ -811,6 +811,12 @@ val size: Long = client.get("/large-file.zip").downloadTo("/tmp/output.zip")
 val response = client.get("/photo.jpg").body()
 val data: ByteArray = response.bodyAsBytes
 val len: Long = response.contentLength
+
+// Video / large file streaming
+val streamed = client.get("/video.mp4").stream()
+streamed.chunks.collect { chunk ->
+    // process each 8KB chunk without buffering the whole file
+}
 ```
 
 ### Android ViewModel with KMP client

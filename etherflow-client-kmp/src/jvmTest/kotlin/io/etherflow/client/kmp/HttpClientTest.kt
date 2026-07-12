@@ -1,6 +1,7 @@
 package io.etherflow.client.kmp
 
 import io.etherflow.client.kmp.internal.platformEngine
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Test
@@ -139,5 +140,41 @@ class HttpClientTest {
         val response = client.get("/posts/1").body()
         assertTrue(response.contentLength > 0)
         assertEquals(response.body.size.toLong(), response.contentLength)
+    }
+
+    @Test
+    fun `stream returns streamed response with status code`() = runBlocking {
+        val client = httpClient {
+            baseUrl = "https://jsonplaceholder.typicode.com"
+        }
+        client.install(platformEngine())
+
+        val streamed = client.get("/posts/1").stream()
+        assertTrue(streamed.isSuccess)
+        assertEquals(200, streamed.statusCode)
+    }
+
+    @Test
+    fun `stream emits all chunks that reassemble the body`() = runBlocking {
+        val client = httpClient {
+            baseUrl = "https://jsonplaceholder.typicode.com"
+        }
+        client.install(platformEngine())
+
+        val buffered = client.get("/posts/1").body()
+        val streamed = client.get("/posts/1").stream()
+
+        val chunks = streamed.chunks.toList()
+        assertTrue(chunks.isNotEmpty())
+
+        var total = 0
+        for (c in chunks) total += c.size
+        val assembled = ByteArray(total)
+        var offset = 0
+        for (chunk in chunks) {
+            chunk.copyInto(assembled, offset)
+            offset += chunk.size
+        }
+        assertArrayEquals(buffered.body, assembled)
     }
 }

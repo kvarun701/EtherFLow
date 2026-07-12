@@ -3,9 +3,14 @@ package io.etherflow.client.kmp.internal
 import io.etherflow.client.kmp.HttpClientEngine
 import io.etherflow.client.kmp.HttpRequest
 import io.etherflow.client.kmp.HttpResponse
+import io.etherflow.client.kmp.StreamedResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.InputStream
 
 actual fun platformEngine(): HttpClientEngine = OkHttpEngine
 
@@ -16,6 +21,58 @@ internal object OkHttpEngine : HttpClientEngine {
         .build()
 
     override suspend fun execute(request: HttpRequest): HttpResponse {
+        val reqBuilder = buildRequest(request)
+        val response = withContext(Dispatchers.IO) {
+            client.newCall(reqBuilder.build()).execute()
+        }
+
+        return HttpResponse(
+            statusCode = response.code,
+            statusText = response.message,
+            headers = response.headers.toMap().mapValues { it.value },
+            body = response.body?.bytes() ?: ByteArray(0)
+        )
+    }
+
+    override suspend fun executeStreaming(request: HttpRequest): StreamedResponse {
+        val reqBuilder = buildRequest(request)
+        val response = withContext(Dispatchers.IO) {
+            client.newCall(reqBuilder.build()).execute()
+        }
+
+        val statusCode = response.code
+        val statusText = response.message
+        val headers = response.headers.toMap().mapValues { it.value }
+        val contentLength = response.body?.contentLength() ?: -1L
+        val body = response.body
+
+        val chunks = channelFlow {
+            if (body != null) {
+                val stream = body.byteStream()
+                try {
+                    val buffer = ByteArray(8192)
+                    var bytesRead = stream.read(buffer)
+                    while (bytesRead >= 0) {
+                        send(buffer.copyOf(bytesRead))
+                        bytesRead = stream.read(buffer)
+                    }
+                } finally {
+                    stream.close()
+                    body.close()
+                }
+            }
+        }
+
+        return StreamedResponse(
+            statusCode = statusCode,
+            statusText = statusText,
+            headers = headers,
+            contentLength = contentLength,
+            chunks = chunks
+        )
+    }
+
+    private fun buildRequest(request: HttpRequest): Request.Builder {
         val reqBuilder = Request.Builder().url(request.url)
         for ((name, value) in request.headers) {
             reqBuilder.addHeader(name, value)
@@ -30,17 +87,7 @@ internal object OkHttpEngine : HttpClientEngine {
         } else {
             reqBuilder.method(request.method, null)
         }
-
-        val response = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            client.newCall(reqBuilder.build()).execute()
-        }
-
-        return HttpResponse(
-            statusCode = response.code,
-            statusText = response.message,
-            headers = response.headers.toMap().mapValues { it.value },
-            body = response.body?.bytes() ?: ByteArray(0)
-        )
+        return reqBuilder
     }
 }
 
