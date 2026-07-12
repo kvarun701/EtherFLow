@@ -90,14 +90,23 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 
 ### Build from source
 
+**Maven:**
 ```bash
 git clone https://github.com/kvarun701/EtherFLow.git
 cd EtherFlow
 mvn install -DskipTests
 ```
 
+**Gradle:**
+```bash
+git clone https://github.com/kvarun701/EtherFLow.git
+cd EtherFlow
+./gradlew jar
+```
+
 ### Add the dependency
 
+**Maven:**
 ```xml
 <dependency>
     <groupId>io.etherflow</groupId>
@@ -107,13 +116,30 @@ mvn install -DskipTests
 </dependency>
 ```
 
+**Gradle (Kotlin DSL):**
+```kotlin
+implementation("io.etherflow:etherflow-starter-webflux:0.1.0")
+```
+
+**Gradle (Groovy DSL):**
+```groovy
+implementation 'io.etherflow:etherflow-starter-webflux:0.1.0'
+```
+
 ### Run the sample
 
+**Maven:**
 ```bash
 mvn exec:java -pl etherflow-sample
-# Or build and run:
 mvn package -pl etherflow-sample -DskipTests
 java -jar etherflow-sample/target/etherflow-sample-0.1.0.jar
+```
+
+**Gradle:**
+```bash
+./gradlew :etherflow-sample:run
+./gradlew :etherflow-sample:jar
+java -jar etherflow-sample/build/libs/etherflow-sample-0.1.0.jar
 ```
 
 ### Hello World in 30 seconds
@@ -205,6 +231,7 @@ Use EtherFlow as your reactive web runtime inside Spring Boot — no Tomcat, no 
 
 ### Add the dependency
 
+**Maven:**
 ```xml
 <dependency>
     <groupId>io.etherflow</groupId>
@@ -212,6 +239,16 @@ Use EtherFlow as your reactive web runtime inside Spring Boot — no Tomcat, no 
     <version>0.1.0</version>
     <type>pom</type>
 </dependency>
+```
+
+**Gradle (Kotlin DSL):**
+```kotlin
+implementation("io.etherflow:etherflow-spring-boot-starter:0.1.0")
+```
+
+**Gradle (Groovy DSL):**
+```groovy
+implementation 'io.etherflow:etherflow-spring-boot-starter:0.1.0'
 ```
 
 ### Define `RouterFunction` beans
