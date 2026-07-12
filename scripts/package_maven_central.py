@@ -35,7 +35,13 @@ def main():
     else:
         print(f"Executing: {' '.join(maven_cmd)}")
         
-    result = subprocess.run(maven_cmd, cwd=base_dir)
+    env = os.environ.copy()
+    # Force JDK 21 to avoid Kotlin compiler incompatibilities on JDK 26
+    jdk_21_home = "/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home"
+    if os.path.exists(jdk_21_home):
+        env["JAVA_HOME"] = jdk_21_home
+        
+    result = subprocess.run(maven_cmd, cwd=base_dir, env=env)
     if result.returncode != 0:
         print("Error: Maven build and deployment failed.", file=sys.stderr)
         sys.exit(1)
