@@ -52,6 +52,17 @@ class HttpRequestBuilder internal constructor(
         return json.decodeFromString(serializer<T>(), response.bodyAsString)
     }
 
+    suspend fun bodyAsBytes(): ByteArray {
+        val response = body()
+        return response.body
+    }
+
+    suspend fun downloadTo(filePath: String): Long {
+        val response = body()
+        response.body.writeToFile(filePath)
+        return response.body.size.toLong()
+    }
+
     private fun resolveUrl(): String {
         var url = if (urlTemplate.startsWith("http")) urlTemplate
                   else config.baseUrl.trimEnd('/') + "/" + urlTemplate.trimStart('/')

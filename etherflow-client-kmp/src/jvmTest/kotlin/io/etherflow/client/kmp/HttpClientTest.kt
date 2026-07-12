@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import java.io.File
 
 @Serializable
 data class Post(val userId: Int, val id: Int, val title: String, val body: String)
@@ -84,4 +85,59 @@ class HttpClientTest {
         assertTrue(bodyStr.contains("--${body.boundary}--"))
     }
 
+    @Test
+    fun `bodyAsBytes returns raw binary data`() = runBlocking {
+        val client = httpClient {
+            baseUrl = "https://jsonplaceholder.typicode.com"
+        }
+        client.install(platformEngine())
+
+        val bytes = client.get("/posts/1").bodyAsBytes()
+        assertTrue(bytes.isNotEmpty())
+        assertTrue(bytes.decodeToString().contains("userId"))
+    }
+
+    @Test
+    fun `writeToFile writes bytes to disk`() {
+        val data = "Hello EtherFlow!".encodeToByteArray()
+        val file = File.createTempFile("etherflow-test-", ".txt")
+        try {
+            data.writeToFile(file.absolutePath)
+            assertTrue(file.exists())
+            assertEquals("Hello EtherFlow!", file.readText())
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun `downloadTo saves response to file`() = runBlocking {
+        val client = httpClient {
+            baseUrl = "https://jsonplaceholder.typicode.com"
+        }
+        client.install(platformEngine())
+
+        val file = File.createTempFile("etherflow-download-", ".json")
+        try {
+            val size = client.get("/posts/1").downloadTo(file.absolutePath)
+            assertTrue(size > 0)
+            assertTrue(file.exists())
+            assertTrue(file.length() > 0)
+            assertTrue(file.readText().contains("userId"))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun `contentLength returns body size`() = runBlocking {
+        val client = httpClient {
+            baseUrl = "https://jsonplaceholder.typicode.com"
+        }
+        client.install(platformEngine())
+
+        val response = client.get("/posts/1").body()
+        assertTrue(response.contentLength > 0)
+        assertEquals(response.body.size.toLong(), response.contentLength)
+    }
 }

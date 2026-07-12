@@ -798,6 +798,21 @@ client.post("/upload")
     .body()
 ```
 
+### Binary download (image, file, etc.)
+
+```kotlin
+// Raw bytes
+val bytes: ByteArray = client.get("/image.png").bodyAsBytes()
+
+// Save directly to file (JVM / iOS)
+val size: Long = client.get("/large-file.zip").downloadTo("/tmp/output.zip")
+
+// Access on response directly
+val response = client.get("/photo.jpg").body()
+val data: ByteArray = response.bodyAsBytes
+val len: Long = response.contentLength
+```
+
 ### Android ViewModel with KMP client
 
 ```kotlin
