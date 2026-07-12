@@ -12,5 +12,6 @@ include(
     "etherflow-spring-boot-starter",
     "etherflow-sample",
     "etherflow-client",
+    "etherflow-client-kmp",
     "etherflow-sample-spring-boot",
 )

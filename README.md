@@ -724,6 +724,112 @@ If you enable minification, add these rules to `proguard-rules.pro`:
 
 ---
 
+## Kotlin Multiplatform (KMP) — Ktor-like API
+
+The `etherflow-client-kmp` module provides a **Ktor-inspired DSL** for Kotlin Multiplatform projects. Write API calls using `suspend` functions and `kotlinx.serialization` — works on JVM, Android, and soon iOS/Native.
+
+### Add the dependency
+
+**`build.gradle.kts`:**
+```kotlin
+implementation("io.etherflow:etherflow-client-kmp:0.1.0")
+```
+
+### Create a client
+
+```kotlin
+import io.etherflow.client.kmp.*
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class User(val id: Int, val name: String, val email: String)
+
+val client = httpClient {
+    baseUrl = "https://jsonplaceholder.typicode.com"
+    retryCount = 3
+    connectTimeout = 10.seconds
+}
+client.install(platformEngine()) // OkHttp on JVM/Android
+```
+
+### GET with path variables
+
+```kotlin
+// Ktor-like: get("url/{id}", arg) → body {} or bodyAs<T>()
+val response: HttpResponse = client.get("/users/{id}", 1).body()
+println(response.statusCode) // 200
+
+// Auto-deserialize to data class using kotlinx.serialization
+val user: User = client.get("/users/{id}", 1).bodyAs<User>()
+println(user.name)
+```
+
+### POST with JSON body
+
+```kotlin
+val created = client.post("/users").body(User(0, "Alice", "alice@example.com"))
+```
+
+### PUT / DELETE
+
+```kotlin
+client.put("/users/{id}", 1).body(User(1, "Bob", "bob@example.com"))
+client.delete("/users/{id}", 1).body()
+```
+
+### Headers, auth, content-type
+
+```kotlin
+val admin = client.get("/admin/users") {
+    header("Authorization", "Bearer $token")
+    header("X-Request-ID", uuid)
+}.bodyAs<List<User>>()
+```
+
+Wait — the builder pattern above uses trailing lambda. Let me use the builder methods:
+
+```kotlin
+val admin: List<User> = client.get("/admin/users")
+    .bearerAuth(token)
+    .header("X-Request-ID", uuid)
+    .bodyAs<List<User>>()
+```
+
+### Android ViewModel with KMP client
+
+```kotlin
+class UserViewModel : ViewModel() {
+    private val client = httpClient {
+        baseUrl = "https://api.example.com"
+        retryCount = 2
+    }.apply { install(platformEngine()) }
+
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> = _user
+
+    fun loadUser(id: String) {
+        viewModelScope.launch {
+            val result = try {
+                client.get("/users/{id}", id).bodyAs<User>()
+            } catch (e: Exception) {
+                null
+            }
+            _user.value = result
+        }
+    }
+}
+```
+
+### KMP targets
+
+| Target | Status | Engine |
+|--------|--------|--------|
+| JVM / Android | ✅ Works | OkHttp |
+| iOS | 🚧 Planned | NSURLSession |
+| JS / Wasm | 🚧 Planned | Ktor CIO |
+
+---
+
 ## Modules
 
 | Module | Description |
@@ -736,6 +842,7 @@ If you enable minification, add these rules to `proguard-rules.pro`:
 | `etherflow-server-netty` | Netty server adapter |
 | `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all server modules |
 | `etherflow-client` | Reactive HTTP client — OkHttp transport, Jackson codec, retry, caching, Kotlin extensions |
+| `etherflow-client-kmp` | KMP HTTP client — Ktor-like DSL, coroutines, `kotlinx.serialization`, multiplatform |
 
 ---
 
@@ -817,6 +924,7 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] Kotlin DSL support (data classes, reified generics, lambdas)
 - [ ] Annotated controllers (`@Controller`, `@RequestMapping`)
 - [x] WebClient (reactive HTTP client — etherflow-client)
+- [x] KMP client with Ktor-like DSL (etherflow-client-kmp)
 - [ ] More Flux operators (`merge`, `zip`, `concatMap`, `retry`, `timeout`)
 - [ ] Customizable error handling
 - [ ] Multipart support

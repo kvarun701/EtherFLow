@@ -7,35 +7,41 @@ allprojects {
     group = "io.etherflow"
     version = "0.1.0"
 
-    apply(plugin = "java-library")
-    apply(plugin = "maven-publish")
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-        withSourcesJar()
-        withJavadocJar()
-    }
-
     repositories {
         mavenCentral()
     }
 
-    dependencies {
-        testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
-        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    }
+    val isJavaProject = !project.name.contains("kmp")
 
-    tasks.withType<Test> {
-        useJUnitPlatform()
-    }
+    if (isJavaProject) {
+        apply(plugin = "java-library")
+        apply(plugin = "maven-publish")
 
-    tasks.withType<Javadoc> {
-        (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+        java {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+            withSourcesJar()
+            withJavadocJar()
+        }
+
+        dependencies {
+            testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+            testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+        }
+
+        tasks.withType<Test> {
+            useJUnitPlatform()
+        }
+
+        tasks.withType<Javadoc> {
+            (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+        }
     }
 }
 
 subprojects {
+    if (project.name.contains("kmp")) return@subprojects
+
     publishing {
         publications {
             create<MavenPublication>("mavenJava") {
