@@ -8,6 +8,25 @@ import java.util.function.*;
 
 public abstract class Mono<T> implements Publisher<T> {
 
+    /**
+     * Creates a Mono that bridges a callback-based API.
+     * The emitter can call {@link MonoSink#success(Object)} or
+     * throw a RuntimeException mapped to {@link MonoSink#error(Throwable)}.
+     *
+     * <pre>{@code
+     * Mono.create(sink -> {
+     *     asyncApi.call(new Callback() {
+     *         void onResult(T v) { sink.success(v); }
+     *         void onError(Throwable t) { sink.error(t); }
+     *     });
+     * });
+     * }</pre>
+     */
+    public static <T> Mono<T> create(Consumer<MonoSink<T>> emitter) {
+        Objects.requireNonNull(emitter);
+        return new MonoCreate<>(emitter);
+    }
+
     public static <T> Mono<T> just(T value) {
         Objects.requireNonNull(value);
         return new MonoJust<>(value);
@@ -60,6 +79,11 @@ public abstract class Mono<T> implements Publisher<T> {
     public final Mono<T> switchIfEmpty(Supplier<? extends Mono<? extends T>> supplier) {
         Objects.requireNonNull(supplier);
         return new MonoSwitchIfEmpty<>(this, supplier);
+    }
+
+    public final Mono<T> onErrorResume(Function<? super Throwable, ? extends Mono<? extends T>> fallback) {
+        Objects.requireNonNull(fallback);
+        return new MonoOnErrorResume<>(this, fallback);
     }
 
     public final Mono<Void> then() {
@@ -677,6 +701,107 @@ public abstract class Mono<T> implements Publisher<T> {
                 public void onComplete() {
                     subscriber.onNext(value);
                     subscriber.onComplete();
+                }
+            });
+        }
+    }
+
+    static final class MonoOnErrorResume<T> extends Mono<T> {
+        private final Mono<T> source;
+        private final Function<? super Throwable, ? extends Mono<? extends T>> fallback;
+
+        MonoOnErrorResume(Mono<T> source, Function<? super Throwable, ? extends Mono<? extends T>> fallback) {
+            this.source = source;
+            this.fallback = fallback;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super T> subscriber) {
+            source.subscribe(new Subscriber<>() {
+                @Override
+                public void onSubscribe(Subscription s) { subscriber.onSubscribe(s); }
+
+                @Override
+                public void onNext(T item) { subscriber.onNext(item); }
+
+                @Override
+                @SuppressWarnings("unchecked")
+                public void onError(Throwable t) {
+                    Mono<? extends T> fallbackMono;
+                    try {
+                        fallbackMono = fallback.apply(t);
+                    } catch (Exception e) {
+                        subscriber.onError(e);
+                        return;
+                    }
+                    if (fallbackMono == null) {
+                        subscriber.onComplete();
+                    } else {
+                        fallbackMono.subscribe(new Subscriber<T>() {
+                            @Override
+                            public void onSubscribe(Subscription s) { s.request(Long.MAX_VALUE); }
+                            @Override
+                            public void onNext(T item) { subscriber.onNext(item); }
+                            @Override
+                            public void onError(Throwable t) { subscriber.onError(t); }
+                            @Override
+                            public void onComplete() { subscriber.onComplete(); }
+                        });
+                    }
+                }
+
+                @Override
+                public void onComplete() { subscriber.onComplete(); }
+            });
+        }
+    }
+
+    static final class MonoCreate<T> extends Mono<T> {
+        private final Consumer<MonoSink<T>> emitter;
+
+        MonoCreate(Consumer<MonoSink<T>> emitter) {
+            this.emitter = emitter;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super T> subscriber) {
+            MonoSink<T> sink = new MonoSink<T>() {
+                private volatile boolean done;
+
+                @Override
+                public void success(T value) {
+                    if (done) return;
+                    done = true;
+                    if (value != null) {
+                        subscriber.onNext(value);
+                    }
+                    subscriber.onComplete();
+                }
+
+                @Override
+                public void error(Throwable t) {
+                    if (done) return;
+                    done = true;
+                    subscriber.onError(t);
+                }
+            };
+
+            subscriber.onSubscribe(new Subscription() {
+                private volatile boolean cancelled;
+
+                @Override
+                public void request(long n) {
+                    if (cancelled || n <= 0) return;
+                    try {
+                        emitter.accept(sink);
+                    } catch (Exception e) {
+                        sink.error(e);
+                    }
+                }
+
+                @Override
+                public void cancel() {
+                    cancelled = true;
                 }
             });
         }

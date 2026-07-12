@@ -17,6 +17,7 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 - **Filter Chain** — `WebFilter` + `WebExceptionHandler` pipeline
 - **Netty Server Adapter** — Run on Netty with a single entry point
 - **Zero Spring Dependency** — No ApplicationContext, no autoconfiguration, no XML — just pure Java/Kotlin
+- **Reactive HTTP Client** — `HttpClient` fluent API with `Mono<T>` responses, built-in retry, caching, streaming — works on Android
 - **Java 21+ & Kotlin** — Sealed classes, pattern matching, records, data classes, reified generics
 
 ---
@@ -34,6 +35,8 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 | **Control** | Framework dictates architecture via IoC | You control every component manually or via simple composition |
 | **Virtual threads** | Works but adds another layer of complexity | Clean — just use `Schedulers.immediate()` on virtual threads |
 | **Kotlin** | Works but reactive types clash with coroutines | Pure Java types — no coroutine conflicts |
+| **Android** | WebFlux doesn't run on Android | `etherflow-client` module uses OkHttp — works on Android natively |
+| **HTTP Client** | WebClient tied to Reactor Netty | `HttpClient` uses OkHttp, returns `Mono<T>` — same types as server |
 
 ### When to pick EtherFlow instead of WebFlux
 
@@ -373,6 +376,142 @@ EtherFlow auto-configuration collects all `RouterFunction` beans, wires them int
 
 ---
 
+## Reactive HTTP Client
+
+Call REST APIs from Android, CLI tools, or server-side apps using EtherFlow's `HttpClient` — the same `Mono`/`Flux` types you use on the server, now on the client side. Zero Spring dependency, OkHttp transport, built-in retry and caching.
+
+### Add the dependency
+
+**Maven:**
+```xml
+<dependency>
+    <groupId>io.etherflow</groupId>
+    <artifactId>etherflow-client</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+**Gradle (Kotlin DSL):**
+```kotlin
+implementation("io.etherflow:etherflow-client:0.1.0")
+```
+
+**Gradle (Groovy DSL):**
+```groovy
+implementation 'io.etherflow:etherflow-client:0.1.0'
+```
+
+### Usage
+
+```java
+import io.etherflow.client.*;
+import io.etherflow.core.Mono;
+
+public class ApiExample {
+    record User(String id, String name, String email) {}
+
+    public static void main(String[] args) {
+        HttpClient client = HttpClient.builder()
+            .baseUrl("https://jsonplaceholder.typicode.com")
+            .retry(3)
+            .cache(java.time.Duration.ofMinutes(5), 100)
+            .build();
+
+        // GET with path variable — returns Mono, subscribe to execute
+        Mono<User> user = client.get()
+            .uri("/users/{id}", 1)
+            .retrieve()
+            .bodyTo(User.class);
+
+        // GET returning a list via ParameterizedTypeReference
+        Mono<List<User>> users = client.get()
+            .uri("/users")
+            .retrieve()
+            .bodyTo(new ParameterizedTypeReference<List<User>>() {});
+
+        // POST with JSON body
+        User newUser = new User(null, "Alice", "alice@example.com");
+        Mono<User> created = client.post()
+            .uri("/users")
+            .body(newUser)
+            .retrieve()
+            .bodyTo(User.class);
+
+        // Safe error handling — never throws
+        Mono<Result<User>> safe = client.get()
+            .uri("/users/{id}", 999)
+            .retrieve()
+            .toResult(User.class);
+
+        // Block for testing / non-reactive code
+        User result = user.block();
+    }
+}
+```
+
+### Kotlin extension functions
+
+The `etherflow-client` module ships with built-in Kotlin reified extensions:
+
+```kotlin
+import io.etherflow.client.*
+
+data class User(val id: String?, val name: String, val email: String)
+
+fun main() {
+    val client = HttpClient.builder()
+        .baseUrl("https://jsonplaceholder.typicode.com")
+        .retry(3)
+        .cache(Duration.ofMinutes(5), 100)
+        .build()
+
+    // Reified type — no Class token needed
+    val user: Mono<User> = client.get()
+        .uri("/users/{id}", 1)
+        .retrieve()
+        .bodyTo<User>()
+
+    // List with reified generics
+    val users: Mono<List<User>> = client.get()
+        .uri("/users")
+        .retrieve()
+        .bodyTo<List<User>>()
+
+    // POST with body
+    val created: Mono<User> = client.post()
+        .uri("/users")
+        .body(User(null, "Alice", "alice@example.com"))
+        .retrieve()
+        .bodyTo<User>()
+
+    // Safe result — never throws
+    val safe: Mono<Result<User>> = client.get()
+        .uri("/users/{id}", 999)
+        .retrieve()
+        .toResult<User>()
+
+    // Block for testing
+    val result = user.block()
+    println(result)
+}
+```
+
+### Why this beats Retrofit
+
+| Retrofit | EtherFlow HttpClient |
+|----------|---------------------|
+| Interface proxy + annotation parsing at runtime | Fluent programmatic API — no reflection |
+| Requires boilerplate interface definitions | No interfaces, just method chains |
+| Multiple adapters (RxJava, coroutines) | Built-in Mono/Flux — same types as the server |
+| Error callbacks via `Call` | Mono error channel + `toResult()` for safe handling |
+| No built-in retry | `retry(3)` with exponential backoff |
+| No built-in caching | `cache(Duration.ofMinutes(5), 100)` — in-memory TTL cache |
+| Hard to customize per request | Interceptors per client |
+| No streaming | `bodyToFlux()` for streaming responses |
+| Type erasure for generics | `ParameterizedTypeReference` + Kotlin reified |
+
+---
+
 ## Modules
 
 | Module | Description |
@@ -383,7 +522,8 @@ EtherFlow auto-configuration collects all `RouterFunction` beans, wires them int
 | `etherflow-http` | `HttpHandler`, `ServerWebExchange`, `ServerHttpRequest`/`Response`, `WebFilter`, `WebExceptionHandler` |
 | `etherflow-web` | `DispatcherHandler`, `HandlerMapping`, `HandlerAdapter`, `RouterFunction`, `HandlerFunction`, `RequestPredicate`, `ServerRequest`/`Response` |
 | `etherflow-server-netty` | Netty server adapter |
-| `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all modules |
+| `etherflow-starter-webflux` | Meta-pom — one dependency to pull in all server modules |
+| `etherflow-client` | Reactive HTTP client — OkHttp transport, Jackson codec, retry, caching, Kotlin extensions |
 
 ---
 
@@ -464,7 +604,7 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] Netty server adapter
 - [x] Kotlin DSL support (data classes, reified generics, lambdas)
 - [ ] Annotated controllers (`@Controller`, `@RequestMapping`)
-- [ ] WebClient (reactive HTTP client)
+- [x] WebClient (reactive HTTP client — etherflow-client)
 - [ ] More Flux operators (`merge`, `zip`, `concatMap`, `retry`, `timeout`)
 - [ ] Customizable error handling
 - [ ] Multipart support

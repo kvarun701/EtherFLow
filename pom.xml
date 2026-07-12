@@ -45,6 +45,7 @@
         <module>etherflow-spring-boot-autoconfigure</module>
         <module>etherflow-spring-boot-starter</module>
         <module>etherflow-sample</module>
+        <module>etherflow-client</module>
         <module>etherflow-sample-spring-boot</module>
     </modules>
 
@@ -88,6 +89,11 @@
             <dependency>
                 <groupId>io.etherflow</groupId>
                 <artifactId>etherflow-server-netty</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.etherflow</groupId>
+                <artifactId>etherflow-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

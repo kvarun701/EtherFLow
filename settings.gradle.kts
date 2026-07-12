@@ -11,5 +11,6 @@ include(
     "etherflow-spring-boot-autoconfigure",
     "etherflow-spring-boot-starter",
     "etherflow-sample",
+    "etherflow-client",
     "etherflow-sample-spring-boot",
 )
