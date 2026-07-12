@@ -41,6 +41,10 @@ class HttpClient internal constructor(val config: HttpClientConfig) {
         return HttpRequestBuilder(resolveEngine(), method, resolved, config)
     }
 
+    suspend fun webSocket(url: String, headers: Map<String, String> = emptyMap()): WebSocketSession {
+        return resolveEngine().createWebSocket(url, headers)
+    }
+
     private fun resolvePathParams(template: String, params: Array<out Any>): String {
         var result = template
         for (param in params) {

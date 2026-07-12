@@ -19,6 +19,7 @@ kotlin {
 
     js(IR) {
         browser()
+        nodejs()
     }
 
     sourceSets {
@@ -60,6 +61,26 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
                 implementation("org.junit.jupiter:junit-jupiter:5.11.4")
+            }
+        }
+
+        val iosX64Test by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            }
+        }
+        val iosArm64Test by getting {
+            dependencies { implementation(kotlin("test")) }
+        }
+        val iosSimulatorArm64Test by getting {
+            dependencies { implementation(kotlin("test")) }
+        }
+
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
             }
         }
     }

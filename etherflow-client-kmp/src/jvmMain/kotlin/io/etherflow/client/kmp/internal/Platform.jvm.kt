@@ -4,6 +4,7 @@ import io.etherflow.client.kmp.HttpClientEngine
 import io.etherflow.client.kmp.HttpRequest
 import io.etherflow.client.kmp.HttpResponse
 import io.etherflow.client.kmp.StreamedResponse
+import io.etherflow.client.kmp.WebSocketSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
@@ -70,6 +71,10 @@ internal object OkHttpEngine : HttpClientEngine {
             contentLength = contentLength,
             chunks = chunks
         )
+    }
+
+    override suspend fun createWebSocket(url: String, headers: Map<String, String>): WebSocketSession {
+        return JvmWebSocketSession(url, headers, client)
     }
 
     private fun buildRequest(request: HttpRequest): Request.Builder {

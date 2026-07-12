@@ -817,6 +817,17 @@ val streamed = client.get("/video.mp4").stream()
 streamed.chunks.collect { chunk ->
     // process each 8KB chunk without buffering the whole file
 }
+
+// WebSocket
+val ws = client.webSocket("wss://echo.example.com")
+ws.send("Hello")
+ws.incoming.collect { msg ->
+    when (msg) {
+        is WebSocketMessage.Text -> println(msg.text)
+        is WebSocketMessage.Binary -> println("binary: ${msg.data.size} bytes")
+    }
+}
+ws.close()
 ```
 
 ### Android ViewModel with KMP client
@@ -846,11 +857,11 @@ class UserViewModel : ViewModel() {
 
 ### KMP targets & features (all ship in `etherflow-client-kmp`)
 
-| Target | Engine | JSON | Multipart | Download | Streaming |
-|--------|--------|------|-----------|----------|-----------|
-| JVM / Android | OkHttp | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks |
-| iOS (x64, arm64, simulator) | NSURLSession | ✅ | ✅ | ✅ `NSData.writeToFile` | ⏳ fallback |
-| JS (IR browser) | `window.fetch` | ✅ | ✅ | ❌ browser sandbox | ✅ `ReadableStream` |
+| Target | Engine | JSON | Multipart | Download | Streaming | WebSocket |
+|--------|--------|------|-----------|----------|-----------|-----------|
+| JVM / Android | OkHttp | ✅ | ✅ | ✅ `FileOutputStream` | ✅ 8 KB chunks | ✅ `OkHttpWebSocket` |
+| iOS (x64, arm64, simulator) | NSURLSession | ✅ | ✅ | ✅ `NSData.writeToFile` | ⏳ fallback | ✅ `NSURLSessionWebSocketTask` |
+| JS (IR browser) | `window.fetch` | ✅ | ✅ | ❌ browser sandbox | ✅ `ReadableStream` | ✅ Browser `WebSocket` |
 
 ---
 
@@ -954,8 +965,8 @@ Requires: **Java 21+**, **Apache Maven 3.8+** (for Maven build) or **Gradle 8.12
 - [x] Multipart upload
 - [x] Binary download (`bodyAsBytes`, `downloadTo`)
 - [x] Streaming response (`StreamedResponse`, `Flow<ByteArray>` chunks)
+- [x] WebSocket (`WebSocketSession`, `incoming: Flow<WebSocketMessage>`, send)
 - [ ] Server-Sent Events (SSE)
-- [ ] WebSocket support
 - [ ] Micrometer metrics integration
 - [ ] GraalVM native-image support
 

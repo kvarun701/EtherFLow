@@ -5,6 +5,7 @@ package io.etherflow.client.kmp.internal
 import io.etherflow.client.kmp.HttpClientEngine
 import io.etherflow.client.kmp.HttpRequest
 import io.etherflow.client.kmp.HttpResponse
+import io.etherflow.client.kmp.WebSocketSession
 import kotlinx.cinterop.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.*
@@ -59,13 +60,17 @@ internal object IosEngine : HttpClientEngine {
         }
         task.resume()
     }
+
+    override suspend fun createWebSocket(url: String, headers: Map<String, String>): WebSocketSession {
+        return IosWebSocketSession(url, headers)
+    }
 }
 
-private fun ByteArray.toNSData(): NSData = usePinned { pinned ->
+internal fun ByteArray.toNSData(): NSData = usePinned { pinned ->
     NSData.create(bytes = pinned.addressOf(0), length = size.toULong())
 }
 
-private fun NSData.toByteArray(): ByteArray {
+internal fun NSData.toByteArray(): ByteArray {
     val size = length.toInt()
     if (size <= 0) return ByteArray(0)
     return ByteArray(size).apply {

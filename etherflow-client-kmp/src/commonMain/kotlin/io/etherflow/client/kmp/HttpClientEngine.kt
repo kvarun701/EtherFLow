@@ -15,4 +15,8 @@ interface HttpClientEngine {
             chunks = flowOf(response.body)
         )
     }
+
+    suspend fun createWebSocket(url: String, headers: Map<String, String> = emptyMap()): WebSocketSession {
+        throw UnsupportedOperationException("WebSocket not supported by this engine")
+    }
 }

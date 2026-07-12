@@ -4,6 +4,7 @@ import io.etherflow.client.kmp.HttpClientEngine
 import io.etherflow.client.kmp.HttpRequest
 import io.etherflow.client.kmp.HttpResponse
 import io.etherflow.client.kmp.StreamedResponse
+import io.etherflow.client.kmp.WebSocketSession
 import kotlinx.browser.window
 import kotlinx.coroutines.await
 import kotlinx.coroutines.flow.channelFlow
@@ -97,6 +98,10 @@ internal object JsEngine : HttpClientEngine {
         return options
     }
 
+    override suspend fun createWebSocket(url: String, headers: Map<String, String>): WebSocketSession {
+        return JsWebSocketSession(url, headers)
+    }
+
     private fun parseHeaders(response: dynamic): Map<String, List<String>> {
         val headers = mutableMapOf<String, List<String>>()
         response.headers.asDynamic().forEach { key, value ->
@@ -106,7 +111,7 @@ internal object JsEngine : HttpClientEngine {
     }
 }
 
-private fun Int8Array.toByteArray(): ByteArray {
+internal fun Int8Array.toByteArray(): ByteArray {
     val len = this.length
     val result = ByteArray(len)
     val self = this.asDynamic()
