@@ -1015,6 +1015,89 @@ The `etherflow-client-compose` module compiles for JVM, Android, iOS, and JS/bro
 
 ---
 
+## Client Anatomy Across Platforms
+
+EtherFlow's HTTP Client architecture uses Kotlin Multiplatform (KMP) to write the core logic once and execute it natively on every platform, using the best native engines and language patterns:
+
+| Platform / Framework | Core Engine | Concurrency Model | JSON Serialization | Target Module |
+|----------------------|-------------|-------------------|--------------------|---------------|
+| **Java (JVM)** | OkHttp | Reactive (`Mono`/`Flux`) | Jackson | `etherflow-client` |
+| **Android (Java)** | OkHttp | Reactive (`Mono`/`Flux`) | Jackson | `etherflow-client` |
+| **Kotlin (JVM/Android)** | OkHttp | Coroutines (`suspend`/`Flow`) | `kotlinx.serialization` | `etherflow-client-kmp` |
+| **iOS (Swift / SwiftUI)** | Darwin (`NSURLSession`) | Swift Concurrency (`async`/`await`) | Swift `JSONDecoder` or `kotlinx` | `etherflow-client-kmp` |
+| **Compose Multiplatform** | Platform Native | Compose State (`rememberHttpClient`) | `kotlinx.serialization` | `etherflow-client-compose` |
+
+---
+
+### 1. Java / Android Java (Reactive Mono/Flux API)
+On pure Java platforms, EtherFlow provides a familiar reactive builder pattern returning `Mono<T>` types:
+```java
+// Create Client with OkHttp engine
+HttpClient client = HttpClient.builder()
+    .baseUrl("https://api.example.com")
+    .build();
+
+// Fetch asynchronously using Mono
+client.get()
+    .uri("/users/{id}", 1)
+    .retrieve()
+    .bodyTo(User.class)
+    .subscribe(
+        user -> System.out.println("User: " + user.name()),
+        error -> error.printStackTrace()
+    );
+```
+
+### 2. Kotlin (Ktor-like Coroutines DSL)
+On Kotlin-first projects, write clean non-blocking code using `suspend` functions and type-safe `bodyAs<T>()` deserializers:
+```kotlin
+val client = httpClient {
+    baseUrl = "https://api.example.com"
+}
+client.install(platformEngine()) // OkHttp under the hood
+
+// Coroutine async call
+val user: User = client.get("/users/{id}", 1).bodyAs<User>()
+```
+
+### 3. iOS (Native Swift & SwiftUI Async/Await)
+When compiled to iOS, Kotlin's `suspend` functions bridge automatically to Swift's native `async`/`await`. Requests use Darwin's underlying `NSURLSession` engine:
+```swift
+import SwiftUI
+import EtherFlowClient
+
+class UserViewModel: ObservableObject {
+    private let client = HttpClient(config: HttpClientConfig())
+    
+    init() {
+        client.install(engine: Platform_iosKt.platformEngine()) // Darwin engine
+    }
+
+    func loadUser() async throws -> User {
+        let response = try await client.get(url: "/users/1", pathParams: []).execute()
+        return try JSONDecoder().decode(User.self, from: response.bodyAsString.data(using: .utf8)!)
+    }
+}
+```
+
+### 4. Compose Multiplatform (Declarative Compose State)
+In Compose Multiplatform (Android, iOS, Desktop, Web), fetch network resource state declaratively inside your UI composables with zero lifecycle boilerplate:
+```kotlin
+@Composable
+fun UserScreen(userId: String) {
+    val client = rememberHttpClient { baseUrl = "https://api.example.com" }
+    val userState = httpGetAs(client, "/users/{id}", userId, serializer = User.serializer())
+
+    when (val state = userState.value) {
+        is HttpRequestState.Loading -> CircularProgressIndicator()
+        is HttpRequestState.Success -> Text("Welcome back, ${state.data.name}!")
+        is HttpRequestState.Error -> Text("Failed to load user.")
+    }
+}
+```
+
+---
+
 ## Modules
 
 | Module | Description |
