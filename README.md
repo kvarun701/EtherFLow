@@ -1096,6 +1096,37 @@ fun UserScreen(userId: String) {
 }
 ```
 
+### 5. JavaScript / Web (Browser Fetch & Kotlin/JS Client)
+For JavaScript environments, you can call the EtherFlow API using standard async `fetch` or consume the compiled Kotlin/JS multiplatform module in standard JS/TS projects:
+
+**Option A: Standard Browser JavaScript (`fetch`):**
+```javascript
+async function fetchUser(userId) {
+    const response = await fetch(`https://api.example.com/users/${userId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Client-Platform': 'Browser-JS'
+        }
+    });
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+    return await response.json();
+}
+```
+
+**Option B: Compiled Kotlin/JS Multiplatform Client:**
+Kotlin Multiplatform compiles to Web JS targets natively using the browser's `fetch` engine.
+```javascript
+import { createHttpClient, platformEngine } from 'etherflow-client-kmp';
+
+const client = createHttpClient();
+client.install(platformEngine()); // Installs window.fetch engine
+
+async function loadData() {
+    const response = await client.get("/users/1", []).execute();
+    console.log(response.bodyAsString);
+}
+```
 
 ---
 
