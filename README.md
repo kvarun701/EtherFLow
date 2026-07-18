@@ -1096,6 +1096,257 @@ fun UserScreen(userId: String) {
 }
 ```
 
+
+---
+
+## iOS Integration Guide (Swift & SwiftUI)
+
+This section walks you through integrating the compiled `EtherFlowClient` framework into native iOS Swift & SwiftUI applications, detailing every API function with step-by-step code snippets.
+
+### 1. Setup & SDK Initialization
+Before calling any APIs, import the framework and initialize the `HttpClient` using the native Darwin (`NSURLSession`) transport engine.
+
+```swift
+import Foundation
+import EtherFlowClient // Import the compiled XCFramework
+
+let client: HttpClient = {
+    let config = HttpClientConfig()
+    config.baseUrl = "https://api.example.com"
+    config.connectTimeout = 15.0 // Timeout in seconds
+    config.defaultHeaders["Accept"] = "application/json"
+    
+    let httpClient = HttpClient(config: config)
+    httpClient.install(engine: Platform_iosKt.platformEngine()) // Installs Darwin engine
+    return httpClient
+}()
+```
+
+### 2. GET Request (JSON & Path Parameters)
+```swift
+struct User: Codable {
+    let id: Int
+    let name: String
+    let email: String
+}
+
+func fetchUser(byId id: Int) async throws -> User {
+    let response = try await client.get(url: "/users/{id}", pathParams: [id]).execute()
+    guard response.isSuccess else {
+        throw NSError(domain: "HTTP", code: Int(response.statusCode), userInfo: nil)
+    }
+    let jsonData = response.bodyAsString.data(using: .utf8)!
+    return try JSONDecoder().decode(User.self, from: jsonData)
+}
+```
+
+### 3. POST Request (JSON Body & Authentication)
+```swift
+struct CreateUserResponse: Codable {
+    let id: Int
+    let success: Bool
+}
+
+func createUser(name: String, email: String, token: String) async throws -> CreateUserResponse {
+    let jsonBody = "{\"name\":\"\(name)\",\"email\":\"\(email)\"}"
+    let response = try await client.post(url: "/users", pathParams: [])
+        .bearerAuth(token: token)
+        .header(name: "X-Client-Platform", value: "iOS")
+        .bodyJson(json: jsonBody)
+    
+    guard response.isSuccess else {
+        throw NSError(domain: "HTTP", code: Int(response.statusCode), userInfo: nil)
+    }
+    let jsonData = response.bodyAsString.data(using: .utf8)!
+    return try JSONDecoder().decode(CreateUserResponse.self, from: jsonData)
+}
+```
+
+### 4. PUT, PATCH, and DELETE Requests
+```swift
+// PUT Request to update
+func updateUser(id: Int, name: String) async throws -> Bool {
+    let jsonBody = "{\"name\":\"\(name)\"}"
+    let response = try await client.put(url: "/users/{id}", pathParams: [id])
+        .bodyJson(json: jsonBody)
+    return response.isSuccess
+}
+
+// PATCH Request to partially update
+func patchUserEmail(id: Int, email: String) async throws -> Bool {
+    let jsonBody = "{\"email\":\"\(email)\"}"
+    let response = try await client.patch(url: "/users/{id}", pathParams: [id])
+        .bodyJson(json: jsonBody)
+    return response.isSuccess
+}
+
+// DELETE Request
+func deleteUser(id: Int) async throws -> Bool {
+    let response = try await client.delete(url: "/users/{id}", pathParams: [id]).body()
+    return response.isSuccess
+}
+```
+
+### 5. Multipart File Upload
+```swift
+func uploadProfilePicture(userId: Int, image: UIImage) async throws -> Bool {
+    guard let imageData = image.jpegData(compressionQuality: 0.8) else { return false }
+    
+    // Convert Swift Data to KotlinByteArray
+    let kotlinBytes = KotlinByteArray(size: Int32(imageData.count))
+    imageData.enumerateBytes { (buffer, byteIndex, _) in
+        for i in 0..<buffer.count {
+            kotlinBytes.set(index: Int32(byteIndex + i), value: Int8(bitPattern: buffer[i]))
+        }
+    }
+
+    let response = try await client.post(url: "/users/{id}/avatar", pathParams: [userId])
+        .multipart { builder in
+            builder.field(name: "description", value: "iOS upload")
+            builder.file(name: "avatar", fileName: "profile.jpg", content: kotlinBytes, contentType: "image/jpeg")
+        }
+        .body()
+        
+    return response.isSuccess
+}
+```
+
+### 6. Binary Download
+```swift
+extension KotlinByteArray {
+    func toData() -> Data {
+        let count = Int(self.size)
+        var data = Data(count: count)
+        data.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) in
+            guard let baseAddress = buffer.baseAddress else { return }
+            for i in 0..<count {
+                baseAddress.storeBytes(of: self.get(index: Int32(i)), toByteOffset: i, as: Int8.self)
+            }
+        }
+        return data
+    }
+}
+
+// Download raw bytes
+func downloadImage(urlPath: String) async throws -> UIImage? {
+    let kotlinBytes = try await client.get(url: urlPath, pathParams: []).bodyAsBytes()
+    return UIImage(data: kotlinBytes.toData())
+}
+
+// Download and Save Directly to Disk
+func downloadZipFile(urlPath: String, fileName: String) async throws -> URL {
+    let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    let destinationUrl = docsUrl.appendingPathComponent(fileName)
+    
+    _ = try await client.get(url: urlPath, pathParams: [])
+        .downloadTo(filePath: destinationUrl.path)
+        
+    return destinationUrl
+}
+```
+
+### 7. Chunked Streaming Response
+```swift
+func streamVideo(urlPath: String) async throws {
+    let streamedResponse = try await client.get(url: urlPath, pathParams: []).stream()
+    guard streamedResponse.isSuccess else { return }
+    
+    streamedResponse.chunks.asHelper().collect(
+        onEach: { chunk in
+            if let chunkData = chunk?.toData() {
+                print("Received streaming chunk of \(chunkData.count) bytes")
+            }
+        },
+        onCompletion: { error in
+            if let error = error {
+                print("Streaming error: \(error.message ?? "unknown")")
+            } else {
+                print("Streaming completed successfully!")
+            }
+        }
+    )
+}
+```
+
+### 8. WebSocket Sessions
+```swift
+class WebSocketManager {
+    private var session: WebSocketSession?
+    
+    func connect() async throws {
+        session = try await client.webSocket(url: "wss://echo.websocket.org", headers: [:])
+        
+        session?.incoming.asHelper().collect(
+            onEach: { message in
+                guard let message = message else { return }
+                switch message {
+                case let textFrame as WebSocketMessage.Text:
+                    print("Received: \(textFrame.text)")
+                case let binaryFrame as WebSocketMessage.Binary:
+                    print("Received binary bytes: \(binaryFrame.data.toData().count)")
+                default:
+                    break
+                }
+            },
+            onCompletion: { error in
+                print("Connection closed. Error: \(error?.message ?? "none")")
+            }
+        )
+    }
+    
+    func sendMessage(text: String) async throws {
+        try await session?.send(message: text)
+    }
+}
+```
+
+### 9. SwiftUI Screen Integration Pattern
+```swift
+import SwiftUI
+import EtherFlowClient
+
+@MainActor
+class UserProfileViewModel: ObservableObject {
+    @Published var user: User? = nil
+    @Published var isLoading = false
+    
+    func loadUserProfile(userId: Int) {
+        isLoading = true
+        Task {
+            do {
+                let response = try await client.get(url: "/users/{id}", pathParams: [userId]).execute()
+                if response.isSuccess {
+                    let data = response.bodyAsString.data(using: .utf8)!
+                    self.user = try JSONDecoder().decode(User.self, from: data)
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+            self.isLoading = false
+        }
+    }
+}
+
+struct UserProfileView: View {
+    @StateObject private var viewModel = UserProfileViewModel()
+    let userId: Int
+    
+    var body: some View {
+        VStack {
+            if viewModel.isLoading {
+                ProgressView()
+            } else if let user = viewModel.user {
+                Text(user.name).font(.title)
+                Text(user.email).font(.subheadline)
+            }
+        }
+        .onAppear {
+            viewModel.loadUserProfile(userId: userId)
+        }
+    }
+}
+```
+
 ---
 
 ## Modules
