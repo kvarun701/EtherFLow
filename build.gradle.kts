@@ -43,6 +43,10 @@ allprojects {
         tasks.withType<Javadoc> {
             (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
         }
+
+        tasks.withType<org.gradle.jvm.tasks.Jar> {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
     }
 }
 
