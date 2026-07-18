@@ -5,7 +5,7 @@
 <h1 align="center">EtherFlow</h1>
 
 <p align="center">
-  <strong>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS & Kotlin Multiplatform built from scratch.</strong>
+  <strong>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS, Flutter & Kotlin Multiplatform built from scratch.</strong>
 </p>
 
 <p align="center">
@@ -1137,6 +1137,46 @@ client.install(platformEngine()); // Installs window.fetch engine
 async function loadData() {
     const response = await client.get("/users/1", []).execute();
     console.log(response.bodyAsString);
+}
+```
+
+### 6. Flutter / Dart (API Call Example)
+For Flutter and Dart client environments, you can call the EtherFlow backend API endpoints natively using standard libraries like the package `http` or `dio`:
+
+```dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class User {
+  final int id;
+  final String name;
+  final String email;
+
+  User({required this.id, required this.name, required this.email});
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+    );
+  }
+}
+
+Future<User> fetchUser(int userId) async {
+  final response = await http.get(
+    Uri.parse('https://api.example.com/users/$userId'),
+    headers: {
+      'Accept': 'application/json',
+      'X-Client-Platform': 'Flutter-Dart',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    return User.fromJson(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to load user: HTTP ${response.statusCode}');
+  }
 }
 ```
 
