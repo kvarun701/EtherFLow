@@ -5,7 +5,7 @@
 <h1 align="center">EtherFlow</h1>
 
 <p align="center">
-  <strong>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS & Kotlin Multiplatform built from scratch.</strong>
+  <strong>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS & Kotlin Multiplatform built from scratch.</strong>
 </p>
 
 <p align="center">
