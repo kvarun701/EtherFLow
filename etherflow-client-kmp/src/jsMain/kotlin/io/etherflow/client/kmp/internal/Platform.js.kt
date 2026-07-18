@@ -18,10 +18,24 @@ actual fun platformEngine(): HttpClientEngine = JsEngine
 
 internal object JsEngine : HttpClientEngine {
 
+    private fun getFetch(): dynamic {
+        val globalThisFetch = js("typeof globalThis !== 'undefined' ? globalThis.fetch : undefined")
+        if (globalThisFetch != null) return globalThisFetch
+
+        val windowFetch = js("typeof window !== 'undefined' ? window.fetch : undefined")
+        if (windowFetch != null) return windowFetch
+
+        val nodeFetch = js("typeof fetch !== 'undefined' ? fetch : undefined")
+        if (nodeFetch != null) return nodeFetch
+
+        throw IllegalStateException("No fetch implementation found in this JavaScript environment.")
+    }
+
     override suspend fun execute(request: HttpRequest): HttpResponse {
         val options = buildOptions(request)
+        val fetchFunc = getFetch()
         val response = try {
-            window.fetch(request.url, options).await()
+            (fetchFunc(request.url, options) as kotlin.js.Promise<dynamic>).await()
         } catch (e: Exception) {
             return suspendCancellableCoroutine { cont ->
                 cont.resumeWithException(Exception("Fetch failed: ${e.message}"))
@@ -46,8 +60,9 @@ internal object JsEngine : HttpClientEngine {
 
     override suspend fun executeStreaming(request: HttpRequest): StreamedResponse {
         val options = buildOptions(request)
+        val fetchFunc = getFetch()
         val response = try {
-            window.fetch(request.url, options).await()
+            (fetchFunc(request.url, options) as kotlin.js.Promise<dynamic>).await()
         } catch (e: Exception) {
             return suspendCancellableCoroutine { cont ->
                 cont.resumeWithException(Exception("Fetch failed: ${e.message}"))
