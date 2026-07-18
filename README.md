@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/kvarun701/EtherFLow/actions"><img src="https://github.com/kvarun701/EtherFLow/actions/workflows/publish.yml/badge.svg" alt="Build Status"></a>
-  <a href="https://central.sonatype.com/"><img src="https://img.shields.io/maven-central/v/io.etherflow/etherflow-parent.svg" alt="Maven Central"></a>
+  <a href="https://central.sonatype.com/"><img src="https://img.shields.io/maven-central/v/io.github.kvarun701/etherflow-parent.svg" alt="Maven Central"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 
@@ -128,10 +128,19 @@ cd EtherFlow
 
 ### Add the dependency
 
+To use this library (especially in Android/Gradle projects), make sure **`mavenCentral()`** is added to your repositories block:
+
+**Gradle (Kotlin / Groovy DSL):**
+```groovy
+repositories {
+    mavenCentral()
+}
+```
+
 **Maven:**
 ```xml
 <dependency>
-    <groupId>io.etherflow</groupId>
+    <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-starter-webflux</artifactId>
     <version>0.1.0</version>
     <type>pom</type>
@@ -140,12 +149,12 @@ cd EtherFlow
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.etherflow:etherflow-starter-webflux:0.1.0")
+implementation("io.github.kvarun701:etherflow-starter-webflux:0.1.0")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.etherflow:etherflow-starter-webflux:0.1.0'
+implementation 'io.github.kvarun701:etherflow-starter-webflux:0.1.0'
 ```
 
 ### Run the sample
@@ -342,7 +351,7 @@ Use EtherFlow as your reactive web runtime in a Kotlin Spring Boot application.
 **Maven:**
 ```xml
 <dependency>
-    <groupId>io.etherflow</groupId>
+    <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-spring-boot-starter</artifactId>
     <version>0.1.0</version>
     <type>pom</type>
@@ -351,12 +360,12 @@ Use EtherFlow as your reactive web runtime in a Kotlin Spring Boot application.
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.etherflow:etherflow-spring-boot-starter:0.1.0")
+implementation("io.github.kvarun701:etherflow-spring-boot-starter:0.1.0")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.etherflow:etherflow-spring-boot-starter:0.1.0'
+implementation 'io.github.kvarun701:etherflow-spring-boot-starter:0.1.0'
 ```
 
 ### Full Kotlin Spring Boot app
@@ -422,7 +431,7 @@ Call REST APIs from Android, CLI tools, or server-side apps using EtherFlow's `H
 **Maven:**
 ```xml
 <dependency>
-    <groupId>io.etherflow</groupId>
+    <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-client</artifactId>
     <version>0.1.0</version>
 </dependency>
@@ -430,12 +439,12 @@ Call REST APIs from Android, CLI tools, or server-side apps using EtherFlow's `H
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.etherflow:etherflow-client:0.1.0")
+implementation("io.github.kvarun701:etherflow-client:0.1.0")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.etherflow:etherflow-client:0.1.0'
+implementation 'io.github.kvarun701:etherflow-client:0.1.0'
 ```
 
 ### Usage
@@ -558,14 +567,14 @@ Use `etherflow-client` as your HTTP client in Android apps — same `Mono<T>` re
 **`build.gradle.kts` (Module: app):**
 ```kotlin
 dependencies {
-    implementation("io.etherflow:etherflow-client:0.1.0")
+    implementation("io.github.kvarun701:etherflow-client:0.1.0")
 }
 ```
 
 **`build.gradle` (Groovy):**
 ```groovy
 dependencies {
-    implementation 'io.etherflow:etherflow-client:0.1.0'
+    implementation 'io.github.kvarun701:etherflow-client:0.1.0'
 }
 ```
 
@@ -769,7 +778,7 @@ The `etherflow-client-kmp` module provides a **Ktor-inspired DSL** for Kotlin Mu
 
 **`build.gradle.kts`:**
 ```kotlin
-implementation("io.etherflow:etherflow-client-kmp:0.1.0")
+implementation("io.github.kvarun701:etherflow-client-kmp:0.1.0")
 ```
 
 ### Create a client
@@ -937,7 +946,7 @@ The `etherflow-client-compose` module provides Compose-friendly helpers for reac
 
 **Add the dependency:**
 ```kotlin
-implementation("io.etherflow:etherflow-client-compose:0.1.0")
+implementation("io.github.kvarun701:etherflow-client-compose:0.1.0")
 ```
 
 **Basic usage:**

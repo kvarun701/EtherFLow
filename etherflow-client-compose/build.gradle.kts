@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -5,7 +7,7 @@ plugins {
     kotlin("plugin.compose")
 }
 
-group = "io.etherflow"
+group = "io.github.kvarun701"
 version = "0.1.0"
 
 kotlin {
@@ -20,7 +22,11 @@ kotlin {
     iosSimulatorArm64()
 
     js(IR) {
-        browser()
+        browser {
+            testTask {
+                enabled = File("/Applications/Google Chrome.app").exists() || File("/Applications/Google Chrome Canary.app").exists()
+            }
+        }
     }
 
     sourceSets {

@@ -1,14 +1,16 @@
+import java.io.File
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.android.library")
 }
 
-group = "io.etherflow"
+group = "io.github.kvarun701"
 version = "0.1.0"
 
 android {
-    namespace = "io.etherflow.client.kmp"
+    namespace = "io.github.kvarun701.client.kmp"
     compileSdk = 35
 
     defaultConfig {
@@ -35,7 +37,11 @@ kotlin {
     iosSimulatorArm64()
 
     js(IR) {
-        browser()
+        browser {
+            testTask {
+                enabled = File("/Applications/Google Chrome.app").exists() || File("/Applications/Google Chrome Canary.app").exists()
+            }
+        }
         nodejs()
     }
 

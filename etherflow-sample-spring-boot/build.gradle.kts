@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClass = "io.etherflow.sample.springboot.SpringBootSampleApp"
+    mainClass = "io.github.kvarun701.sample.springboot.SpringBootSampleApp"
 }
 
 dependencies {

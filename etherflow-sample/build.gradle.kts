@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClass = "io.etherflow.sample.SampleApp"
+    mainClass = "io.github.kvarun701.sample.SampleApp"
 }
 
 dependencies {
