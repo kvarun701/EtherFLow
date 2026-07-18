@@ -23,7 +23,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy the built jar from the build stage
-COPY --from=build /app/etherflow-sample/target/etherflow-sample-0.1.0.jar app.jar
+COPY --from=build /app/etherflow-sample/target/etherflow-sample-0.1.1.jar app.jar
 
 # Expose port 8080 (standard HTTP port)
 EXPOSE 8080

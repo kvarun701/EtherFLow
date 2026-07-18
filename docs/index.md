@@ -31,7 +31,7 @@ A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS
 <dependency>
     <groupId>io.etherflow</groupId>
     <artifactId>etherflow-starter-webflux</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <type>pom</type>
 </dependency>
 ```
@@ -106,7 +106,7 @@ Requires: Java 21+, Apache Maven 3.8+
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.etherflow:etherflow-client-kmp:0.1.0")
+    implementation("io.etherflow:etherflow-client-kmp:0.1.1")
 }
 ```
 
@@ -175,7 +175,7 @@ Add `etherflow-client-compose` for Compose-friendly HTTP helpers:
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.etherflow:etherflow-client-compose:0.1.0")
+    implementation("io.etherflow:etherflow-client-compose:0.1.1")
 }
 ```
 
