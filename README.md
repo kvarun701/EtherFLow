@@ -1140,9 +1140,22 @@ async function loadData() {
 }
 ```
 
-### 6. Flutter / Dart (API Call Example)
-For Flutter and Dart client environments, you can call the EtherFlow backend API endpoints natively using standard libraries like the package `http` or `dio`:
+## Flutter & Dart Integration Guide
 
+This section walks you through integrating and calling your EtherFlow API from native Flutter/Dart client applications, detailing every API function with step-by-step code snippets.
+
+### 1. Setup & Configuration
+Add the standard HTTP and WebSocket libraries to your `pubspec.yaml`:
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  web_socket_channel: ^3.0.0
+  path_provider: ^2.1.2 # Optional: for file downloads
+```
+
+### 2. GET Request (JSON & Path Parameters)
 ```dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -1163,19 +1176,199 @@ class User {
   }
 }
 
-Future<User> fetchUser(int userId) async {
+Future<User> fetchUser(int id) async {
+  // Path parameter mapping: url/id
   final response = await http.get(
-    Uri.parse('https://api.example.com/users/$userId'),
-    headers: {
-      'Accept': 'application/json',
-      'X-Client-Platform': 'Flutter-Dart',
-    },
+    Uri.parse('https://api.example.com/users/$id'),
+    headers: {'Accept': 'application/json'},
   );
 
   if (response.statusCode == 200) {
     return User.fromJson(jsonDecode(response.body));
   } else {
     throw Exception('Failed to load user: HTTP ${response.statusCode}');
+  }
+}
+```
+
+### 3. POST Request (JSON Body & Authentication)
+```dart
+Future<bool> createUser(String name, String email, String token) async {
+  final response = await http.post(
+    Uri.parse('https://api.example.com/users'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'name': name,
+      'email': email,
+    }),
+  );
+
+  return response.statusCode == 201 || response.statusCode == 200;
+}
+```
+
+### 4. PUT, PATCH, and DELETE Requests
+```dart
+// PUT request to update
+Future<bool> updateUser(int id, String name) async {
+  final response = await http.put(
+    Uri.parse('https://api.example.com/users/$id'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'name': name}),
+  );
+  return response.statusCode == 200;
+}
+
+// PATCH request to partially update
+Future<bool> patchUser(int id, String email) async {
+  final response = await http.patch(
+    Uri.parse('https://api.example.com/users/$id'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'email': email}),
+  );
+  return response.statusCode == 200;
+}
+
+// DELETE request
+Future<bool> deleteUser(int id) async {
+  final response = await http.delete(
+    Uri.parse('https://api.example.com/users/$id'),
+  );
+  return response.statusCode == 200 || response.statusCode == 204;
+}
+```
+
+### 5. Multipart File Upload
+```dart
+import 'package:http/http.dart' as http;
+
+Future<bool> uploadAvatar(int userId, List<int> imageBytes, String filename) async {
+  var request = http.MultipartRequest(
+    'POST',
+    Uri.parse('https://api.example.com/users/$userId/avatar'),
+  );
+
+  request.fields['description'] = 'Flutter avatar upload';
+  request.files.add(
+    http.MultipartFile.fromBytes(
+      'avatar',
+      imageBytes,
+      filename: filename,
+    ),
+  );
+
+  var response = await request.send();
+  return response.statusCode == 200;
+}
+```
+
+### 6. Binary Download
+```dart
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
+// Download directly as bytes
+Future<List<int>> downloadBytes(String urlPath) async {
+  final response = await http.get(Uri.parse('https://api.example.com/$urlPath'));
+  return response.bodyBytes;
+}
+
+// Download and write directly to disk
+Future<File> downloadFileToDisk(String urlPath, String fileName) async {
+  final response = await http.get(Uri.parse('https://api.example.com/$urlPath'));
+  
+  final directory = await getApplicationDocumentsDirectory();
+  final filePath = '${directory.path}/$fileName';
+  final file = File(filePath);
+  
+  return await file.writeAsBytes(response.bodyBytes);
+}
+```
+
+### 7. Chunked Streaming Response
+```dart
+Future<void> streamLargeFile(String urlPath) async {
+  final client = http.Client();
+  final request = http.Request('GET', Uri.parse('https://api.example.com/$urlPath'));
+  final response = await client.send(request);
+
+  response.stream.listen(
+    (List<int> chunk) {
+      print("Received chunk of size: ${chunk.length} bytes");
+      // Process chunk buffer
+    },
+    onDone: () => print("Download completed"),
+    onError: (e) => print("Download error: $e"),
+  );
+}
+```
+
+### 8. WebSocket Sessions
+```dart
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+class WebSocketService {
+  late WebSocketChannel channel;
+
+  void connect() {
+    channel = WebSocketChannel.connect(
+      Uri.parse('wss://echo.websocket.org'),
+    );
+
+    // Listen to incoming messages in real-time
+    channel.stream.listen((message) {
+      print('Received: $message');
+    }, onDone: () {
+      print('WebSocket closed');
+    }, onError: (e) {
+      print('WebSocket error: $e');
+    });
+  }
+
+  void sendMessage(String text) {
+    channel.sink.add(text);
+  }
+
+  void close() {
+    channel.sink.close();
+  }
+}
+```
+
+### 9. Binding with Flutter UI
+```dart
+import 'package:flutter/material.dart';
+
+class UserProfileWidget extends StatelessWidget {
+  final int userId;
+
+  UserProfileWidget({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<User>(
+      future: fetchUser(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          final user = snapshot.data!;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(user.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(user.email, style: TextStyle(fontSize: 16, color: Colors.grey)),
+            ],
+          );
+        }
+        return Center(child: Text('No data'));
+      },
+    );
   }
 }
 ```
