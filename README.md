@@ -758,92 +758,79 @@ Run the included API Gateway sample demonstrating EtherFlow bridging Netty with 
 mvn exec:java -pl etherflow-sample -Dexec.mainClass="io.etherflow.sample.PythonApiSample"
 ```
 
-### 🔷 Calling .NET Web APIs (ASP.NET Core & .NET Framework)
+### 🔷 Calling APIs in .NET using EtherFlow (`EtherFlow.Client`)
 
-EtherFlow includes a dedicated reactive client abstraction (`DotNetApiClient`) designed specifically for calling .NET Framework and ASP.NET Core Web APIs asynchronously. It handles non-blocking JSON request/response pipelines, path parameter substitution, body serialization, and health monitoring for .NET microservices.
+EtherFlow includes a native C# client library (`EtherFlow.Client.EtherFlowClient`) allowing **.NET Core (C#)** and **.NET Framework** applications to call external REST APIs asynchronously with fluent builders, exponential retries, JSON serialization (`System.Text.Json`), and robust error handling.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 EtherFlow Reactive App                      │
-│      (Netty / DispatcherHandler / Mono / Flux)              │
+│             C# .NET Application / Web API                   │
+│         (ASP.NET Core / Console / Background Worker)        │
 └──────────────────────────────┬──────────────────────────────┘
                                │
-                      DotNetApiClient.get()
+                    EtherFlowClient.GetAsync<T>()
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│             .NET Framework / ASP.NET Core Web API           │
-│                    http://localhost:5003                    │
+│                    External REST API / Microservice         │
+│                 https://api.example.com/users               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 1. Java Example: Calling .NET Web API
+#### 1. C# Example: Instantiating and Calling APIs in .NET
 
-```java
-import io.etherflow.client.dotnet.DotNetApiClient;
-import io.etherflow.core.Mono;
-import java.util.Map;
-import java.util.List;
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using EtherFlow.Client;
 
-public class DotNetIntegrationExample {
-    public static void main(String[] args) {
-        // Create client for .NET Web API server (defaulting to port 5003)
-        DotNetApiClient dotNetClient = DotNetApiClient.create("http://localhost:5003");
+public class ApiConsumer
+{
+    public static async Task Main(string[] args)
+    {
+        // 1. Create EtherFlow Client in .NET
+        var client = EtherFlowClient.Create("https://jsonplaceholder.typicode.com");
 
-        // 1. Call GET hello endpoint — returns Mono<Map>
-        Mono<Map> greeting = dotNetClient.get("/api/dotnet/hello?name=EnterpriseUser", Map.class);
+        // 2. Call GET endpoint asynchronously — deserializes JSON to Dictionary / Model
+        var user = await client.GetAsync<Dictionary<string, object>>("/users/1");
+        Console.WriteLine($"Fetched User: {user?["name"]}");
 
-        // 2. Call GET product by ID endpoint
-        Mono<Map> product = dotNetClient.get("/api/dotnet/products/99", Map.class);
-
-        // 3. Call POST endpoint with JSON body payload
-        Map<String, Object> body = Map.of("taskName", "BatchProcessing", "data", List.of(1, 2, 3, 4));
-        Mono<Map> result = dotNetClient.post("/api/dotnet/process", body, Map.class);
-
-        // 4. Reactive health check for .NET service
-        Mono<Map<String, Object>> health = dotNetClient.health();
+        // 3. Call POST endpoint with payload & retries
+        var payload = new { Title = "EtherFlow .NET Post", Body = "Calling API in .NET", UserId = 42 };
+        var response = await client.PostAsync<Dictionary<string, object>>("/posts", payload);
+        Console.WriteLine($"Created Remote Post ID: {response?["id"]}");
     }
 }
 ```
 
-#### 2. Kotlin Example: Idiomatic Usage
+#### 2. Using EtherFlow Client in ASP.NET Core Controllers & Minimal APIs
 
-```kotlin
-import io.etherflow.client.dotnet.DotNetApiClient
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using EtherFlow.Client;
 
-fun main() {
-    val client = DotNetApiClient.create("http://localhost:5003")
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
 
-    // Async reactive call returning Mono<Map>
-    client.get("/api/dotnet/hello?name=KotlinUser", Map::class.java).subscribe { response ->
-        println("Greeting from .NET: ${response["greeting"]}")
-    }
+var etherFlowClient = EtherFlowClient.Create("https://api.example.com");
 
-    // Health check
-    client.health().subscribe { health ->
-        println(".NET Health: ${health["status"]}")
-    }
-}
+app.MapGet("/api/data/{id}", async (int id) =>
+{
+    // Calling external API in .NET using EtherFlow Client
+    var data = await etherFlowClient.GetAsync<Dictionary<string, object>>($"/items/{id}");
+    return Results.Ok(data);
+});
+
+app.Run("http://localhost:5003");
 ```
 
-#### 3. Running .NET API Backends
-
-EtherFlow provides .NET API server implementations in the `dotnet-servers/` directory:
+#### 3. Running .NET EtherFlow Client Application
 
 ```bash
-# Option A: Standard ASP.NET Core Web API (requires .NET SDK)
+# Run C# .NET Application using EtherFlow Client
 dotnet run --project dotnet-servers/DotNetApi.csproj
-
-# Option B: Zero-dependency standalone Python mock server simulating .NET API on port 5003
-python dotnet-servers/dotnet_api_mock.py
-```
-
-#### 4. Runnable .NET Gateway Sample App
-
-Run the included .NET API sample app demonstrating EtherFlow bridging Netty with .NET Web API:
-
-```bash
-mvn exec:java -pl etherflow-sample -Dexec.mainClass="io.etherflow.sample.DotNetApiSample"
 ```
 
 ### Why this beats Retrofit
