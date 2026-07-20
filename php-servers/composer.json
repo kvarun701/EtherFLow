@@ -1,0 +1,26 @@
+{
+    "name": "etherflow-php",
+    "description": "EtherFlow HTTP client for PHP — mirrors the Java/Kotlin builder API",
+    "type": "library",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+        { "name": "kvarun701", "homepage": "https://github.com/kvarun701" }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit":    "^10",
+        "slim/slim":          "^4.12",
+        "slim/psr7":          "^1.6"
+    },
+    "autoload": {
+        "files": ["EtherFlowClient.php"]
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

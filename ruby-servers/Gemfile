@@ -1,0 +1,12 @@
+source 'https://rubygems.org'
+
+# EtherFlow Ruby client — zero-dependency (uses standard library only)
+# Uncomment for the Sinatra server:
+# gem 'sinatra',  '~> 3.1'
+# gem 'puma',     '~> 6.4'
+# gem 'rack',     '~> 3.0'
+
+group :development, :test do
+  gem 'rspec', '~> 3.12'
+  gem 'webmock', '~> 3.23'
+end

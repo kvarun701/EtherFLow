@@ -1,0 +1,14 @@
+name: etherflow_client
+description: EtherFlow HTTP client for Dart — mirrors the Java/Kotlin builder API
+version: 1.0.0
+homepage: https://github.com/kvarun701/EtherFLow
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  http: ^1.2.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test:  ^1.24.0

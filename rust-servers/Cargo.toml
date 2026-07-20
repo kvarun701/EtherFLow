@@ -1,0 +1,27 @@
+[package]
+name    = "etherflow-rust"
+version = "1.0.0"
+edition = "2021"
+description = "EtherFlow HTTP client for Rust — mirrors the Java/Kotlin builder API"
+authors = ["kvarun701"]
+license = "MIT"
+
+[[bin]]
+name = "etherflow_server"
+path = "src/main.rs"
+
+[lib]
+name = "etherflow_client"
+path = "src/etherflow_client.rs"
+
+[dependencies]
+reqwest  = { version = "0.12",  features = ["json"] }
+serde    = { version = "1",     features = ["derive"] }
+serde_json = "1"
+tokio    = { version = "1",     features = ["full"] }
+thiserror = "1"
+axum     = "0.7"
+tower    = "0.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
