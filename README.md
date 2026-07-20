@@ -571,6 +571,95 @@ EtherFlow provides dedicated, high-performance reactive client abstractions (`Py
 └──────────────────────────────┘ └─────────────────────────────┘
 ```
 
+#### 🏗️ Python Architecture: Creating APIs & Calling Third-Party APIs
+
+When implementing Python backend services (Flask or FastAPI), the standard enterprise architecture divides responsibilities into **Controllers/Routes**, **Integration Services**, and **Data Models**:
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│                    Client / EtherFlow Gateway                     │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │ HTTP Request
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│               Python Web API (Flask or FastAPI)                   │
+│   ┌───────────────────────────────────────────────────────────┐   │
+│   │ 1. Controller / Route Layer (@app.route / @app.get)       │   │
+│   └─────────────────────────────┬─────────────────────────────┘   │
+│                                 │ Invokes                         │
+│   ┌─────────────────────────────▼─────────────────────────────┐   │
+│   │ 2. Service Layer (SyncThirdPartyService / AsyncService)   │   │
+│   └─────────────────────────────┬─────────────────────────────┘   │
+└─────────────────────────────────┼─────────────────────────────────┘
+                                  │ HTTP Call (requests / httpx)
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│                     External Third-Party API                      │
+│             (e.g., Weather API, Payment Gateway, Payment)         │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+##### Creating APIs & Calling Third-Party APIs in Flask (`requests`)
+
+```python
+from flask import Flask, jsonify, request
+import requests
+
+app = Flask(__name__)
+
+# 1. API Creation: Define Flask route
+@app.route('/api/flask/external-user/<int:user_id>', methods=['GET'])
+def get_external_user(user_id):
+    # 2. Third-Party API Call using 'requests' library
+    url = f"https://jsonplaceholder.typicode.com/users/{user_id}"
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        external_data = response.json()
+        
+        # 3. Return enriched JSON response
+        return jsonify({
+            "status": "success",
+            "source": "Flask -> Third-Party API",
+            "user": {
+                "id": external_data.get("id"),
+                "name": external_data.get("name"),
+                "email": external_data.get("email")
+            }
+        }), 200
+    except requests.exceptions.RequestException as err:
+        return jsonify({"status": "error", "message": str(err)}), 500
+```
+
+##### Creating APIs & Calling Third-Party APIs in FastAPI (`httpx`)
+
+```python
+from fastapi import FastAPI, Query
+from pydantic import BaseModel
+import httpx
+
+app = FastAPI(title="FastAPI Third-Party API Service")
+
+# 1. Data Model Schema
+class AnalyticsEvent(BaseModel):
+    event_name: str
+    data: dict
+
+# 2. Async API Creation & Third-Party Integration using 'httpx'
+@app.post("/api/fastapi/external-event", status_code=201)
+async def post_third_party_event(event: AnalyticsEvent):
+    url = "https://jsonplaceholder.typicode.com/posts"
+    async with httpx.AsyncClient(timeout=5) as client:
+        res = await client.post(url, json=event.dict())
+        res.raise_for_status()
+        
+        return {
+            "status": "success",
+            "source": "FastAPI -> Third-Party Webhook",
+            "remoteResponse": res.json()
+        }
+```
+
 #### 1. Java Example: Unified Python API Client
 
 ```java
