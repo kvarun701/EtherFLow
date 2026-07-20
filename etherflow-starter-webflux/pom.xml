@@ -37,5 +37,9 @@
             <groupId>io.github.kvarun701</groupId>
             <artifactId>etherflow-server-netty</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.kvarun701</groupId>
+            <artifactId>etherflow-client</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -28,6 +28,8 @@ EtherFlow is a from-scratch implementation of a reactive web framework inspired 
 *   🚀 **Zero-Dependency Netty Core** — Build embedded web servers on Netty with a tiny package footprint (~2MB JAR size) and sub-100ms startup times (no Spring context, no reflection magic, no XML).
 *   🎯 **Functional Routing DSL** — A powerful, type-safe functional DSL (`RouterFunction` builder + `HandlerFunction` + `RequestPredicate`) for web endpoints and filter pipelines.
 *   📡 **Multiplatform HTTP Client** — Includes a Kotlin Multiplatform `HttpClient` with fluent APIs returning `Mono<T>`, built-in retries, multipart upload, streaming support, and local file I/O that runs seamlessly across JVM, Android, iOS, and JS.
+*   🐍 **Python API Calling Feature (Flask & FastAPI)** — High-performance reactive clients (`PythonApiClient`, `FlaskApiClient`, `FastApiClient`) returning `Mono<T>` for seamless, asynchronous interop with Python Flask API and FastAPI backends.
+*   🔷 **.NET Framework & Web API Calling Feature** — Specialized reactive client (`DotNetApiClient`) returning `Mono<T>` for non-blocking communication with ASP.NET Core and .NET Framework Web APIs.
 *   📦 **Full Core Capabilities**:
     *   **Reactive Streams SPI** — Full implementation of `Publisher`, `Subscriber`, `Subscription`, and `Processor` interfaces.
     *   **Operator Suite** — Rich functional operator chains: `map`, `flatMap`, `filter`, `switchIfEmpty`, `then`, `thenReturn`, `subscribeOn`, `publishOn`, `block`, etc.
@@ -548,10 +550,211 @@ fun main() {
         .retrieve()
         .toResult<User>()
 
-    // Block for testing
-    val result = user.block()
-    println(result)
 }
+
+### 🐍 Calling Python APIs (Flask API & FastAPI Integration)
+
+EtherFlow provides dedicated, high-performance reactive client abstractions (`PythonApiClient`, `FlaskApiClient`, and `FastApiClient`) designed for calling Python web microservices asynchronously. It handles non-blocking JSON request/response pipelines, path parameter substitution, body serialization, and health monitoring for both **Flask API** and **FastAPI** backends.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 EtherFlow Reactive App                      │
+│      (Netty / DispatcherHandler / Mono / Flux)              │
+└──────────────┬───────────────────────────────┬──────────────┘
+               │                               │
+    PythonApiClient.flask()         PythonApiClient.fastApi()
+               │                               │
+               ▼                               ▼
+┌──────────────────────────────┐ ┌─────────────────────────────┐
+│    Python Flask REST API     │ │    Python FastAPI Server    │
+│    http://localhost:5001     │ │    http://localhost:5002    │
+└──────────────────────────────┘ └─────────────────────────────┘
+```
+
+#### 1. Java Example: Unified Python API Client
+
+```java
+import io.etherflow.client.python.*;
+import io.etherflow.core.Mono;
+import java.util.Map;
+
+public class PythonIntegrationExample {
+    public static void main(String[] args) {
+        // Create unified Python API client for Flask (5001) & FastAPI (5002)
+        PythonApiClient pythonClient = PythonApiClient.builder()
+                .flaskUrl("http://localhost:5001")
+                .fastApiUrl("http://localhost:5002")
+                .build();
+
+        // 1. Call Flask GET endpoint — returns Mono<Map>
+        Mono<Map> flaskGreeting = pythonClient.flask()
+                .get("/api/flask/hello?name=Alice", Map.class);
+
+        // 2. Call Flask POST model prediction endpoint
+        Map<String, Object> payload = Map.of("inputs", java.util.List.of(10, 20, 30));
+        Mono<Map> flaskPrediction = pythonClient.flask()
+                .post("/api/flask/predict", payload, Map.class);
+
+        // 3. Call FastAPI GET endpoint
+        Mono<Map> fastApiItem = pythonClient.fastApi()
+                .get("/api/fastapi/items/42", Map.class);
+
+        // 4. Call FastAPI POST dataset analysis endpoint
+        Map<String, Object> analysisReq = Map.of("dataset_name", "Sales2026", "metrics", java.util.List.of(1.5, 3.2, 4.8));
+        Mono<Map> fastApiAnalysis = pythonClient.fastApi()
+                .post("/api/fastapi/analyze", analysisReq, Map.class);
+
+        // 5. Reactive health check aggregating Flask & FastAPI statuses
+        Mono<Map<String, Object>> health = pythonClient.checkHealth();
+    }
+}
+```
+
+#### 2. Kotlin Example: Idiomatic Functional Usage
+
+```kotlin
+import io.etherflow.client.python.PythonApiClient
+import io.etherflow.client.python.FlaskApiClient
+import io.etherflow.client.python.FastApiClient
+
+fun main() {
+    val pythonClient = PythonApiClient.builder()
+        .flaskUrl("http://localhost:5001")
+        .fastApiUrl("http://localhost:5002")
+        .build()
+
+    // Non-blocking reactive calls returning Mono
+    val flaskRes = pythonClient.callFlaskGet("/api/flask/hello?name=Kotlin", Map::class.java)
+    val fastRes  = pythonClient.callFastApiGet("/api/fastapi/items/100", Map::class.java)
+
+    // Aggregate health check across both Python services
+    pythonClient.checkHealth().subscribe { status ->
+        println("Combined Python Services Status: ${status["overallStatus"]}")
+    }
+}
+```
+
+#### 3. Dedicated Flask & FastAPI Clients
+
+For microservices targeting a single Python backend:
+
+```java
+// Dedicated Flask API client
+FlaskApiClient flaskClient = FlaskApiClient.create("http://localhost:5001");
+Mono<Map> user = flaskClient.get("/api/flask/users/100", Map.class);
+
+// Dedicated FastAPI client
+FastApiClient fastApiClient = FastApiClient.create("http://localhost:5002");
+Mono<Map> item = fastApiClient.get("/api/fastapi/items/200", Map.class);
+```
+
+#### 4. Running Python API Backends
+
+EtherFlow provides sample Python API services in the `python-servers/` directory:
+
+```bash
+# Option A: Standard Flask & FastAPI (requires pip dependencies)
+pip install -r python-servers/requirements.txt
+python python-servers/start_python_apis.py
+
+# Option B: Zero-dependency standalone Python mock server (uses standard library only)
+python python-servers/mock_python_apis.py
+```
+
+#### 5. Runnable Gateway Sample App
+
+Run the included API Gateway sample demonstrating EtherFlow bridging Netty with Flask & FastAPI:
+
+```bash
+mvn exec:java -pl etherflow-sample -Dexec.mainClass="io.etherflow.sample.PythonApiSample"
+```
+
+### 🔷 Calling .NET Web APIs (ASP.NET Core & .NET Framework)
+
+EtherFlow includes a dedicated reactive client abstraction (`DotNetApiClient`) designed specifically for calling .NET Framework and ASP.NET Core Web APIs asynchronously. It handles non-blocking JSON request/response pipelines, path parameter substitution, body serialization, and health monitoring for .NET microservices.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 EtherFlow Reactive App                      │
+│      (Netty / DispatcherHandler / Mono / Flux)              │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                      DotNetApiClient.get()
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│             .NET Framework / ASP.NET Core Web API           │
+│                    http://localhost:5003                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 1. Java Example: Calling .NET Web API
+
+```java
+import io.etherflow.client.dotnet.DotNetApiClient;
+import io.etherflow.core.Mono;
+import java.util.Map;
+import java.util.List;
+
+public class DotNetIntegrationExample {
+    public static void main(String[] args) {
+        // Create client for .NET Web API server (defaulting to port 5003)
+        DotNetApiClient dotNetClient = DotNetApiClient.create("http://localhost:5003");
+
+        // 1. Call GET hello endpoint — returns Mono<Map>
+        Mono<Map> greeting = dotNetClient.get("/api/dotnet/hello?name=EnterpriseUser", Map.class);
+
+        // 2. Call GET product by ID endpoint
+        Mono<Map> product = dotNetClient.get("/api/dotnet/products/99", Map.class);
+
+        // 3. Call POST endpoint with JSON body payload
+        Map<String, Object> body = Map.of("taskName", "BatchProcessing", "data", List.of(1, 2, 3, 4));
+        Mono<Map> result = dotNetClient.post("/api/dotnet/process", body, Map.class);
+
+        // 4. Reactive health check for .NET service
+        Mono<Map<String, Object>> health = dotNetClient.health();
+    }
+}
+```
+
+#### 2. Kotlin Example: Idiomatic Usage
+
+```kotlin
+import io.etherflow.client.dotnet.DotNetApiClient
+
+fun main() {
+    val client = DotNetApiClient.create("http://localhost:5003")
+
+    // Async reactive call returning Mono<Map>
+    client.get("/api/dotnet/hello?name=KotlinUser", Map::class.java).subscribe { response ->
+        println("Greeting from .NET: ${response["greeting"]}")
+    }
+
+    // Health check
+    client.health().subscribe { health ->
+        println(".NET Health: ${health["status"]}")
+    }
+}
+```
+
+#### 3. Running .NET API Backends
+
+EtherFlow provides .NET API server implementations in the `dotnet-servers/` directory:
+
+```bash
+# Option A: Standard ASP.NET Core Web API (requires .NET SDK)
+dotnet run --project dotnet-servers/DotNetApi.csproj
+
+# Option B: Zero-dependency standalone Python mock server simulating .NET API on port 5003
+python dotnet-servers/dotnet_api_mock.py
+```
+
+#### 4. Runnable .NET Gateway Sample App
+
+Run the included .NET API sample app demonstrating EtherFlow bridging Netty with .NET Web API:
+
+```bash
+mvn exec:java -pl etherflow-sample -Dexec.mainClass="io.etherflow.sample.DotNetApiSample"
 ```
 
 ### Why this beats Retrofit

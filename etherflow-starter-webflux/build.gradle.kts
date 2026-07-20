@@ -7,4 +7,5 @@ dependencies {
     api(project(":etherflow-http"))
     api(project(":etherflow-web"))
     api(project(":etherflow-server-netty"))
+    api(project(":etherflow-client"))
 }
