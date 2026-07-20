@@ -5,13 +5,15 @@
 <h1 align="center">EtherFlow</h1>
 
 <p align="center">
-  <strong>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, Python, .NET, iOS, JS, Flutter & Kotlin Multiplatform built from scratch.</strong>
+  <strong>A lightweight, high-performance Reactive Web Framework for every language platform in the world — Java, Kotlin, Python, .NET, Swift, Node.js, TypeScript, Dart, Go, Rust, Ruby, PHP, Scala, Android, iOS, Flutter &amp; Kotlin Multiplatform.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/kvarun701/EtherFLow/actions"><img src="https://github.com/kvarun701/EtherFLow/actions/workflows/publish.yml/badge.svg" alt="Build Status"></a>
   <a href="https://central.sonatype.com/"><img src="https://img.shields.io/maven-central/v/io.github.kvarun701/etherflow-parent.svg" alt="Maven Central"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/Platforms-16-brightgreen" alt="16 Platforms">
+  <img src="https://img.shields.io/badge/Branch-all--language--platforms-orange" alt="Branch">
 </p>
 
 <p align="center">
@@ -19,6 +21,202 @@
 </p>
 
 EtherFlow is a from-scratch implementation of a reactive web framework inspired by Spring WebFlux. It provides a lightweight, highly efficient `Mono`/`Flux` reactive implementation, a functional `RouterFunction` DSL for HTTP endpoints, JSON serialization via Jackson, and a zero-dependency Netty server adapter — all without pulling in the Spring Framework or any heavy dependency trees.
+
+> **🌐 `all-language-platforms` branch** — This branch extends EtherFlow with native HTTP clients and server implementations for **every major programming language in the world**. See the [All Language Platforms](#-all-language-platforms) section below.
+
+---
+
+## 🌐 All Language Platforms
+
+EtherFlow now ships with native API clients and server examples for **16 language platforms**. Every client mirrors the same fluent builder API introduced in the Java/Kotlin core.
+
+### Platform Matrix
+
+| Language | Client File | Server File | Port | Package Manager |
+|----------|-------------|-------------|------|-----------------|
+| ☕ Java | `etherflow-client` (Maven/Gradle) | `NettyServer` | 8080 | Maven / Gradle |
+| 🎯 Kotlin | `etherflow-client` (Gradle KTS) | `NettyServer` | 8080 | Gradle KTS |
+| 🐍 Python Flask | `python-servers/flask_app.py` | Flask | 5001 | pip |
+| ⚡ Python FastAPI | `python-servers/fastapi_app.py` | FastAPI | 5002 | pip |
+| 🔷 C# / .NET | `dotnet-servers/EtherFlowClient.cs` | ASP.NET Core | 5003 | dotnet |
+| 🍎 Swift | `swift-servers/EtherFlowClient.swift` | Vapor 4 | 5004 | SPM |
+| 🟨 Node.js / JS | `nodejs-servers/etherflow-client.js` | Express | 5005 | npm |
+| 📘 TypeScript | `nodejs-servers/etherflow-client.ts` | Express | 5005 | npm |
+| 🦀 Rust | `rust-servers/src/etherflow_client.rs` | Axum | 5006 | Cargo |
+| 💎 Ruby | `ruby-servers/etherflow_client.rb` | Sinatra | 5007 | Bundler |
+| 🐹 Go | `go-servers/etherflow_client.go` | net/http | 5008 | go mod |
+| 🎯 Dart | `dart-servers/etherflow_client.dart` | Shelf | 5009 | pub |
+| ⚡ Scala | `scala-servers/EtherFlowClient.scala` | http4s | 8081 | sbt |
+| 🐘 PHP | `php-servers/EtherFlowClient.php` | Slim | 5010 | Composer |
+| 🤖 Android | `android-examples/` | — | — | Gradle |
+| 🌸 Spring Boot | `spring-examples/` | Spring + EtherFlow | 8080 | Maven/Gradle |
+| 🦋 Flutter / KMP | `etherflow-client-kmp/` | — | — | pub / Gradle |
+
+### Quick Start Per Platform
+
+#### 🍎 Swift (URLSession + Vapor)
+```swift
+let client = EtherFlowClient.builder()
+    .baseURL("https://api.example.com")
+    .retry(3)
+    .build()
+
+let user: User = try await client.get("/users/1")
+let created: User = try await client.post("/users", body: newUser)
+```
+> Run server: `swift run` — requires Swift 5.9+, Vapor 4
+
+#### 🟨 Node.js / JavaScript
+```javascript
+const { EtherFlowClient } = require('./nodejs-servers/etherflow-client');
+const client = EtherFlowClient.builder()
+    .baseUrl('https://api.example.com')
+    .retry(3)
+    .build();
+
+const user = await client.getJson('/users/1');
+const created = await client.postJson('/users', { name: 'Alice' });
+```
+> Run server: `node nodejs-servers/express-server.js`
+
+#### 📘 TypeScript
+```typescript
+import { EtherFlowClient } from './nodejs-servers/etherflow-client';
+
+const client = EtherFlowClient.builder()
+    .baseUrl('https://api.example.com')
+    .retry(3)
+    .build();
+
+const user = await client.get('/users/1').retrieve<User>();
+const result = await client.get('/users/999').safeRetrieve<User>(); // never throws
+```
+
+#### 🎯 Dart (standalone)
+```dart
+final client = EtherFlowClient.builder()
+    .baseUrl('https://api.example.com')
+    .retry(3)
+    .build();
+
+final user = await client.get('/users/1', decoder: User.fromJson);
+final users = await client.getList('/users', decoder: User.fromJson);
+
+// Safe result — never throws
+final result = await client.getResult('/users/999', decoder: User.fromJson);
+switch (result) {
+  case EtherFlowSuccess(:final data): print('Found: ${data.name}');
+  case EtherFlowFailure(:final error): print('Error: $error');
+}
+```
+> Run server: `dart run dart-servers/server.dart`
+
+#### 🐹 Go
+```go
+client := etherflow.NewBuilder().
+    BaseURL("https://api.example.com").
+    Retry(3).
+    Timeout(10 * time.Second).
+    Build()
+
+var user User
+err := client.Get(ctx, "/users/1", &user)
+
+var users []User
+err = client.Get(ctx, "/users", &users)
+
+err = client.Post(ctx, "/users", newUser, &created)
+```
+> Run server: `go run go-servers/server.go go-servers/etherflow_client.go`
+
+#### 🦀 Rust
+```rust
+let client = EtherFlowClient::builder()
+    .base_url("https://api.example.com")
+    .retry(3)
+    .build()?;
+
+let user: User = client.get("/users/1").await?;
+let users: Vec<User> = client.get("/users").await?;
+let created: User = client.post("/users", &new_user).await?;
+let health = client.check_health().await; // safe — never panics
+```
+> Run server: `cargo run --bin etherflow_server`
+
+#### 💎 Ruby
+```ruby
+client = EtherFlow::Client.builder
+             .base_url('https://api.example.com')
+             .retry(3)
+             .build
+
+user = client.get('/users/1')        # => Hash
+users = client.get('/users')         # => Array<Hash>
+created = client.post('/users', name: 'Alice', email: 'alice@example.com')
+
+# Safe result — never raises
+status, result = client.get_result('/users/999')
+```
+> Run server: `ruby ruby-servers/sinatra_server.rb`
+
+#### 🐘 PHP
+```php
+$client = EtherFlowClient::create('https://api.example.com');
+
+$user    = $client->get('/users/1');           // array
+$users   = $client->get('/users');             // array[]
+$created = $client->post('/users', ['name' => 'Alice']);
+
+// Safe — no exception
+$result  = $client->getResult('/users/999');   // ['ok' => bool, 'data' => ...]
+```
+> Run server: `php -S localhost:5010 php-servers/server.php`
+
+#### ⚡ Scala 3
+```scala
+given ec: ExecutionContext = ExecutionContext.global
+val client = EtherFlowClient.builder
+  .baseUrl("https://api.example.com")
+  .retry(3)
+  .build
+
+val user: Future[User]       = client.get[User]("/users/1")
+val users: Future[List[User]] = client.getList[User]("/users")
+val result: Future[EtherFlowResult[User]] = client.getResult("/users/999") // safe
+```
+
+#### 🤖 Android (Kotlin)
+```kotlin
+// Same EtherFlow HttpClient used on Android (OkHttp transport)
+private val client = HttpClient.builder()
+    .baseUrl("https://api.example.com")
+    .retry(3)
+    .cache(Duration.ofMinutes(5), 100)
+    .build()
+
+// PythonApiClient — call Flask or FastAPI from Android
+private val pythonClient = PythonApiClient.builder()
+    .flaskUrl("http://10.0.2.2:5001")
+    .fastApiUrl("http://10.0.2.2:5002")
+    .build()
+
+fun loadUser(id: String) {
+    client.get().uri("/users/{id}", id).retrieve().bodyTo<User>()
+        .subscribe({ user -> _state.value = user }, { e -> /* handle error */ })
+}
+```
+
+#### 🌱 Spring Boot (Kotlin + Java)
+```kotlin
+// Spring Boot auto-configuration — wire RouterFunction @Beans
+@Bean
+fun apiRoutes(handler: TaskHandler, externalService: ExternalApiService): RouterFunction =
+    RouterFunction.route()
+        .GET("/api/tasks")              { handler.listTasks(it) }
+        .GET("/api/gateway/flask/{n}")  { externalService.callFlask(it.pathVariable("n")) }
+        .GET("/api/gateway/fastapi/{id}") { externalService.callFastApi(it.pathVariable("id").toInt()) }
+        .build()
+```
 
 ---
 
