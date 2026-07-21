@@ -754,6 +754,30 @@ fun main() {
 
 EtherFlow provides dedicated, high-performance reactive client abstractions (`PythonApiClient`, `FlaskApiClient`, and `FastApiClient`) designed for calling Python web microservices asynchronously. It handles non-blocking JSON request/response pipelines, path parameter substitution, body serialization, and health monitoring for both **Flask API** and **FastAPI** backends.
 
+#### 📦 Python Package Installation & Prerequisites
+
+To use Python with EtherFlow (Flask API, FastAPI, or standalone requests/httpx clients), install the required dependencies using `pip`:
+
+##### Option A: Direct `pip install` (Recommended)
+```bash
+pip install flask fastapi uvicorn pydantic requests httpx
+```
+
+##### Option B: Install via `requirements.txt`
+```bash
+pip install -r python-servers/requirements.txt
+```
+
+##### Required Packages Overview:
+| Package | Version | Purpose |
+| :--- | :--- | :--- |
+| **`flask`** | `>=3.0.0` | Synchronous Python web framework (runs on port 5001) |
+| **`fastapi`** | `>=0.110.0` | Asynchronous Python web framework (runs on port 5002) |
+| **`uvicorn`** | `>=0.28.0` | High-performance ASGI web server for running FastAPI apps |
+| **`pydantic`** | `>=2.6.0` | Data validation & type-safe JSON serialization for FastAPI |
+| **`requests`** | `>=2.31.0` | Synchronous HTTP client library for Flask API calls |
+| **`httpx`** | `>=0.27.0` | Asynchronous HTTP client (`async`/`await`) for non-blocking API calls |
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 EtherFlow Reactive App                      │
