@@ -975,7 +975,74 @@ EtherFlow includes a native C# client library (`EtherFlow.Client.EtherFlowClient
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 1. C# Example: Instantiating and Calling APIs in .NET
+#### 1. Adding the Library to Your C# Project
+
+##### Option A: via dotnet CLI (Recommended for .NET Core / .NET 5+)
+Open your terminal/command prompt in your project folder and run:
+
+```bash
+dotnet add package EtherFlow.Client
+```
+
+##### Option B: via Visual Studio Package Manager Console
+In Visual Studio, navigate to **Tools > NuGet Package Manager > Package Manager Console** and execute:
+
+```powershell
+Install-Package EtherFlow.Client
+```
+
+##### Option C: Direct .csproj Reference
+Edit your `.csproj` file directly to include the dependency:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework> <!-- Or net6.0, net48, etc. -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EtherFlow.Client" Version="0.1.1" />
+    <!-- Required for .NET Framework 4.x projects -->
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+</Project>
+```
+
+##### Option D: Local Project Reference (Building from Source)
+If you have the C# client project source locally inside your solution:
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\EtherFlow.Client\EtherFlow.Client.csproj" />
+</ItemGroup>
+```
+
+---
+
+#### 2. Using EtherFlowClient in C#
+
+Below are examples showing how to instantiate `EtherFlowClient` using fluent builders, execute asynchronous REST requests, perform JSON serialization/deserialization via `System.Text.Json`, and handle retries and errors.
+
+##### A. Defining Data Models
+
+```csharp
+using System.Text.Json.Serialization;
+
+public record User(
+    [property: JsonPropertyName("id")] long Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("email")] string Email
+);
+
+public record CreateUserRequest(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("email")] string Email
+);
+```
+
+##### B. Client Initialization with Fluent Builder & Retry Policy
 
 ```csharp
 using System;
@@ -983,53 +1050,99 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using EtherFlow.Client;
 
-public class ApiConsumer
+class Program
 {
-    public static async Task Main(string[] args)
+    static async Task Main(string[] args)
     {
-        // 1. Create EtherFlow Client in .NET
-        var client = EtherFlowClient.Create("https://jsonplaceholder.typicode.com");
+        // 1. Build and configure EtherFlowClient
+        using var client = EtherFlowClient.Builder()
+            .WithBaseUrl("http://localhost:8080")
+            .WithTimeout(TimeSpan.FromSeconds(10))
+            .WithDefaultHeader("Accept", "application/json")
+            .WithDefaultHeader("X-Client-Platform", "DotNet-C#")
+            .WithExponentialRetry(maxRetries: 3, initialDelayMs: 200, backoffFactor: 2.0)
+            .Build();
 
-        // 2. Call GET endpoint asynchronously — deserializes JSON to Dictionary / Model
-        var user = await client.GetAsync<Dictionary<string, object>>("/users/1");
-        Console.WriteLine($"Fetched User: {user?["name"]}");
+        try
+        {
+            // 2. GET Request (List of Users)
+            var users = await client.GetAsync<List<User>>("/api/users");
+            Console.WriteLine($"Fetched {users?.Count ?? 0} users:");
+            users?.ForEach(u => Console.WriteLine($" - [{u.Id}] {u.Name} ({u.Email})"));
 
-        // 3. Call POST endpoint with payload & retries
-        var payload = new { Title = "EtherFlow .NET Post", Body = "Calling API in .NET", UserId = 42 };
-        var response = await client.PostAsync<Dictionary<string, object>>("/posts", payload);
-        Console.WriteLine($"Created Remote Post ID: {response?["id"]}");
+            // 3. GET Single User by ID
+            var user = await client.GetAsync<User>("/api/users/1");
+            Console.WriteLine($"User 1: {user?.Name}");
+
+            // 4. POST Request (Create User)
+            var request = new CreateUserRequest("Alice Smith", "alice@example.com");
+            var createdUser = await client.PostAsync<CreateUserRequest, User>("/api/users", request);
+            Console.WriteLine($"Created User ID: {createdUser?.Id}");
+
+            // 5. PUT Request (Update User)
+            var updateRequest = new CreateUserRequest("Alice Johnson", "alice.j@example.com");
+            var updatedUser = await client.PutAsync<CreateUserRequest, User>("/api/users/1", updateRequest);
+            Console.WriteLine($"Updated User Name: {updatedUser?.Name}");
+
+            // 6. DELETE Request
+            bool deleted = await client.DeleteAsync("/api/users/1");
+            Console.WriteLine($"Deleted successfully: {deleted}");
+        }
+        catch (EtherFlowException ex)
+        {
+            Console.WriteLine($"EtherFlow API Error [{ex.StatusCode}]: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+        }
     }
 }
 ```
 
-#### 2. Using EtherFlow Client in ASP.NET Core Controllers & Minimal APIs
+---
+
+#### 3. Registering with ASP.NET Core Dependency Injection
+
+For ASP.NET Core web applications or microservices, register `EtherFlowClient` in `Program.cs`:
 
 ```csharp
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using EtherFlow.Client;
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 
-var etherFlowClient = EtherFlowClient.Create("https://api.example.com");
-
-app.MapGet("/api/data/{id}", async (int id) =>
+// Register EtherFlowClient as a singleton or scoped service
+builder.Services.AddSingleton<IEtherFlowClient>(sp =>
 {
-    // Calling external API in .NET using EtherFlow Client
-    var data = await etherFlowClient.GetAsync<Dictionary<string, object>>($"/items/{id}");
-    return Results.Ok(data);
+    return EtherFlowClient.Builder()
+        .WithBaseUrl(builder.Configuration["EtherFlow:BaseUrl"] ?? "http://localhost:8080")
+        .WithTimeout(TimeSpan.FromSeconds(15))
+        .WithExponentialRetry(maxRetries: 3, initialDelayMs: 500)
+        .Build();
 });
 
-app.Run("http://localhost:5003");
+var app = builder.Build();
+
+// Example Minimal API endpoint consuming EtherFlowClient
+app.MapGet("/external-users", async (IEtherFlowClient etherFlowClient) =>
+{
+    var users = await etherFlowClient.GetAsync<List<User>>("/api/users");
+    return Results.Ok(users);
+});
+
+app.Run();
 ```
 
-#### 3. Running .NET EtherFlow Client Application
+---
 
-```bash
-# Run C# .NET Application using EtherFlow Client
-dotnet run --project dotnet-servers/DotNetApi.csproj
-```
+#### 4. Key Features Provided
+
+| Feature | Description |
+| :--- | :--- |
+| **Async/Await Native** | Built on `HttpClient` & `Task` for non-blocking I/O. |
+| **System.Text.Json** | High-performance JSON serialization without Newtonsoft.Json overhead. |
+| **Exponential Retries** | Built-in backoff algorithm for resilient network calls. |
+| **Cross-Targeting** | Compatible with .NET Standard 2.0 / 2.1, .NET Core 3.1+, .NET 6/7/8/9, and .NET Framework 4.6.2+. |
 
 ### Why this beats Retrofit
 
