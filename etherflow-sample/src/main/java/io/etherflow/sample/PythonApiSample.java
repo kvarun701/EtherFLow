@@ -32,14 +32,16 @@ public class PythonApiSample {
                                 .flatMap(health -> Mono.just(ServerResponse.ok(health))))
 
                 .GET("/python/flask/hello", req -> {
-                    String name = req.queryParam("name").orElse("EtherFlow Dev");
+                    String param = req.queryParam("name");
+                    String name = (param != null && !param.isEmpty()) ? param : "EtherFlow Dev";
                     return pythonClient.flask()
                             .get("/api/flask/hello?name=" + name, Map.class)
                             .flatMap(res -> Mono.just(ServerResponse.ok(res)));
                 })
 
                 .GET("/python/fastapi/hello", req -> {
-                    String name = req.queryParam("name").orElse("EtherFlow Dev");
+                    String param = req.queryParam("name");
+                    String name = (param != null && !param.isEmpty()) ? param : "EtherFlow Dev";
                     return pythonClient.fastApi()
                             .get("/api/fastapi/hello?name=" + name, Map.class)
                             .flatMap(res -> Mono.just(ServerResponse.ok(res)));

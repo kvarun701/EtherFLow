@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.*
 import java.io.File
 
 @Serializable
-data class Post(val userId: Int, val id: Int, val title: String, val body: String)
+data class Post(var userId: Int = 0, var id: Int = 0, var title: String = "", var body: String = "")
 
 class HttpClientTest {
 
