@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
     group = "io.github.kvarun701"
-    version = "0.1.1"
+    version = "0.1.2"
 
     repositories {
         google()
