@@ -41,7 +41,7 @@ mvn install -DskipTests
 <dependency>
     <groupId>io.etherflow</groupId>
     <artifactId>etherflow-starter-webflux</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
     <type>pom</type>
 </dependency>
 ```
@@ -52,7 +52,7 @@ mvn install -DskipTests
 <dependency>
     <groupId>io.etherflow</groupId>
     <artifactId>etherflow-spring-boot-starter</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
     <type>pom</type>
 </dependency>
 ```

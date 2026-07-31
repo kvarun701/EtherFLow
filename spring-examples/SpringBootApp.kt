@@ -6,7 +6,7 @@
 // and call Python/Node.js backends reactively.
 //
 // Dependency (build.gradle.kts):
-//   implementation("io.github.kvarun701:etherflow-spring-boot-starter:0.1.1")
+//   implementation("io.github.kvarun701:etherflow-spring-boot-starter:0.1.3")
 
 package io.etherflow.spring.example
 
