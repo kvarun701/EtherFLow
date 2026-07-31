@@ -5,7 +5,7 @@
 // using ViewModel, StateFlow, and coroutine-friendly Mono.subscribe().
 //
 // Dependency (build.gradle.kts):
-//   implementation("io.github.kvarun701:etherflow-client:0.1.1")
+//   implementation("io.github.kvarun701:etherflow-client:0.1.3")
 
 package io.etherflow.android.example
 

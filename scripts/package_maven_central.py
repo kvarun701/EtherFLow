@@ -13,7 +13,7 @@ def main():
 
     base_dir = "/Users/varun/Desktop/EtherFlow"
     staging_dir = os.path.join(base_dir, "target", "staging-deploy")
-    zip_path = "/Users/varun/Desktop/etherflow-maven-central-0.1.1.zip"
+    zip_path = "/Users/varun/Desktop/etherflow-maven-central-0.1.3.zip"
 
     passphrase = args.passphrase or os.environ.get("GPG_PASSPHRASE")
     keyname = args.keyname or os.environ.get("GPG_KEYNAME")
