@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
     group = "io.github.kvarun701"
-    version = "0.1.1"
+    version = "0.1.2"
 
     repositories {
         google()
@@ -51,34 +51,44 @@ allprojects {
 }
 
 subprojects {
-    if (project.name.contains("kmp")) return@subprojects
+    val isKmp = project.name.contains("kmp")
+
+    if (isKmp) {
+        apply(plugin = "maven-publish")
+        apply(plugin = "signing")
+    }
 
     publishing {
-        publications {
-            create<MavenPublication>("mavenJava") {
-                from(components["java"])
-                pom {
-                    name.set(project.name)
-                    description.set(project.description ?: project.name)
+        if (!isKmp) {
+            publications {
+                create<MavenPublication>("mavenJava") {
+                    from(components["java"])
+                }
+            }
+        }
+
+        publications.withType<MavenPublication> {
+            pom {
+                name.set(project.name)
+                description.set(project.description ?: project.name)
+                url.set("https://github.com/kvarun701/EtherFLow")
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("kvarun701")
+                        name.set("kvarun701")
+                        email.set("kvarun701@gmail.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/kvarun701/EtherFLow.git")
+                    developerConnection.set("scm:git:git@github.com:kvarun701/EtherFLow.git")
                     url.set("https://github.com/kvarun701/EtherFLow")
-                    licenses {
-                        license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("kvarun701")
-                            name.set("kvarun701")
-                            email.set("kvarun701@gmail.com")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:https://github.com/kvarun701/EtherFLow.git")
-                        developerConnection.set("scm:git:git@github.com:kvarun701/EtherFLow.git")
-                        url.set("https://github.com/kvarun701/EtherFLow")
-                    }
                 }
             }
         }
@@ -96,4 +106,16 @@ subprojects {
         }
     }
 
+    if (isKmp) {
+        plugins.withId("signing") {
+            configure<org.gradle.plugins.signing.SigningExtension> {
+                val signingKey = System.getenv("ORG_GRADLE_PROJECT_signingKey")
+                val signingPassword = System.getenv("ORG_GRADLE_PROJECT_signingPassword")
+                if (signingKey != null && signingPassword != null) {
+                    useInMemoryPgpKeys(signingKey, signingPassword)
+                    sign(extensions.getByType<org.gradle.api.publish.PublishingExtension>().publications)
+                }
+            }
+        }
+    }
 }

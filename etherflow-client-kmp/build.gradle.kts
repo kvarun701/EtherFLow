@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.kvarun701"
-version = "0.1.1"
+version = "0.1.3"
 
 android {
     namespace = "io.github.kvarun701.client.kmp"
