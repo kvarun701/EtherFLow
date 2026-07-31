@@ -354,19 +354,19 @@ repositories {
 <dependency>
     <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-starter-webflux</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
     <type>pom</type>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.github.kvarun701:etherflow-starter-webflux:0.1.1")
+implementation("io.github.kvarun701:etherflow-starter-webflux:0.1.3")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.github.kvarun701:etherflow-starter-webflux:0.1.1'
+implementation 'io.github.kvarun701:etherflow-starter-webflux:0.1.3'
 ```
 
 ### Run the sample
@@ -375,14 +375,14 @@ implementation 'io.github.kvarun701:etherflow-starter-webflux:0.1.1'
 ```bash
 mvn exec:java -pl etherflow-sample
 mvn package -pl etherflow-sample -DskipTests
-java -jar etherflow-sample/target/etherflow-sample-0.1.1.jar
+java -jar etherflow-sample/target/etherflow-sample-0.1.3.jar
 ```
 
 **Gradle:**
 ```bash
 ./gradlew :etherflow-sample:run
 ./gradlew :etherflow-sample:jar
-java -jar etherflow-sample/build/libs/etherflow-sample-0.1.1.jar
+java -jar etherflow-sample/build/libs/etherflow-sample-0.1.3.jar
 ```
 
 ### Hello World in 30 seconds
@@ -565,19 +565,19 @@ Use EtherFlow as your reactive web runtime in a Kotlin Spring Boot application.
 <dependency>
     <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-spring-boot-starter</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
     <type>pom</type>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.github.kvarun701:etherflow-spring-boot-starter:0.1.1")
+implementation("io.github.kvarun701:etherflow-spring-boot-starter:0.1.3")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.github.kvarun701:etherflow-spring-boot-starter:0.1.1'
+implementation 'io.github.kvarun701:etherflow-spring-boot-starter:0.1.3'
 ```
 
 ### Full Kotlin Spring Boot app
@@ -645,18 +645,18 @@ Call REST APIs from Android, CLI tools, or server-side apps using EtherFlow's `H
 <dependency>
     <groupId>io.github.kvarun701</groupId>
     <artifactId>etherflow-client</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.3</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL):**
 ```kotlin
-implementation("io.github.kvarun701:etherflow-client:0.1.1")
+implementation("io.github.kvarun701:etherflow-client:0.1.3")
 ```
 
 **Gradle (Groovy DSL):**
 ```groovy
-implementation 'io.github.kvarun701:etherflow-client:0.1.1'
+implementation 'io.github.kvarun701:etherflow-client:0.1.3'
 ```
 
 ### Usage
@@ -1056,14 +1056,14 @@ Use `etherflow-client` as your HTTP client in Android apps — same `Mono<T>` re
 **`build.gradle.kts` (Module: app):**
 ```kotlin
 dependencies {
-    implementation("io.github.kvarun701:etherflow-client:0.1.1")
+    implementation("io.github.kvarun701:etherflow-client:0.1.3")
 }
 ```
 
 **`build.gradle` (Groovy):**
 ```groovy
 dependencies {
-    implementation 'io.github.kvarun701:etherflow-client:0.1.1'
+    implementation 'io.github.kvarun701:etherflow-client:0.1.3'
 }
 ```
 
@@ -1267,7 +1267,7 @@ The `etherflow-client-kmp` module provides a **Ktor-inspired DSL** for Kotlin Mu
 
 **`build.gradle.kts`:**
 ```kotlin
-implementation("io.github.kvarun701:etherflow-client-kmp:0.1.1")
+implementation("io.github.kvarun701:etherflow-client-kmp:0.1.3")
 ```
 
 ### Create a client
@@ -1435,7 +1435,7 @@ The `etherflow-client-compose` module provides Compose-friendly helpers for reac
 
 **Add the dependency:**
 ```kotlin
-implementation("io.github.kvarun701:etherflow-client-compose:0.1.1")
+implementation("io.github.kvarun701:etherflow-client-compose:0.1.3")
 ```
 
 **Basic usage:**
