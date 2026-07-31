@@ -33,16 +33,16 @@ import java.time.Duration
 // ─────────────────────────────────────────────────────────────────────────────
 
 data class User(
-    val id: String?,
-    val name: String,
-    val email: String
+    var id: String? = null,
+    var name: String = "",
+    var email: String = ""
 )
 
 data class Post(
-    val id: Int?,
-    val title: String,
-    val body: String,
-    val userId: Int
+    var id: Int? = null,
+    var title: String = "",
+    var body: String = "",
+    var userId: Int = 0
 )
 
 // ─────────────────────────────────────────────────────────────────────────────

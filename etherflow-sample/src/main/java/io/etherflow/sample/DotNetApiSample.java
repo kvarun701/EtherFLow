@@ -29,7 +29,8 @@ public class DotNetApiSample {
                                 .flatMap(health -> Mono.just(ServerResponse.ok(health))))
 
                 .GET("/dotnet/hello", req -> {
-                    String name = req.queryParam("name").orElse("EtherFlow Dev");
+                    String param = req.queryParam("name");
+                    String name = (param != null && !param.isEmpty()) ? param : "EtherFlow Dev";
                     return dotNetClient.get("/api/dotnet/hello?name=" + name, Map.class)
                             .flatMap(res -> Mono.just(ServerResponse.ok(res)));
                 })

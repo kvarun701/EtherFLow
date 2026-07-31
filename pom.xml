@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
 
     <name>EtherFlow</name>
-    <description>A lightweight, high-performance Reactive Web Framework for Java, Kotlin, Python, .NET, iOS, JS, Flutter &amp; Kotlin Multiplatform built from scratch</description>
+    <description>A lightweight, high-performance Reactive Web Framework for every language platform in the world — Java, Kotlin, Python, .NET, Swift, Node.js, TypeScript, Dart, Go, Rust, Ruby, PHP, Scala, Android, iOS, Flutter &amp; Kotlin Multiplatform.</description>
     <url>https://github.com/kvarun701/EtherFLow</url>
 
     <licenses>

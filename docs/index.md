@@ -1,11 +1,11 @@
 ---
 title: EtherFlow
-description: A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS, Flutter & Kotlin Multiplatform built from scratch
+description: A lightweight, high-performance Reactive Web Framework for every language platform in the world — Java, Kotlin, Python, .NET, Swift, Node.js, TypeScript, Dart, Go, Rust, Ruby, PHP, Scala, Android, iOS, Flutter & Kotlin Multiplatform.
 ---
 
 # EtherFlow
 
-A lightweight, high-performance Reactive Web Framework for Java, Kotlin, iOS, JS, Flutter & Kotlin Multiplatform built from scratch.
+A lightweight, high-performance Reactive Web Framework for every language platform in the world — Java, Kotlin, Python, .NET, Swift, Node.js, TypeScript, Dart, Go, Rust, Ruby, PHP, Scala, Android, iOS, Flutter & Kotlin Multiplatform.
 
 [GitHub](https://github.com/kvarun701/EtherFLow) | [API Docs](api)
 
